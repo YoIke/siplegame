@@ -1,0 +1,497 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: white;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* Status bar */
+.status-bar {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.status-bar.connected {
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+}
+
+.status-bar.disconnected {
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+}
+
+/* Screen management */
+.screen {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Buttons */
+.btn {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn.primary {
+    font-size: 1.2rem;
+    padding: 15px 30px;
+}
+
+.btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Matchmaking */
+#matchmaking {
+    text-align: center;
+}
+
+#matchmaking h2 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+#waitingMessage {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Game waiting */
+#gameWaiting {
+    text-align: center;
+}
+
+#playersInfo {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.player-item:last-child {
+    border-bottom: none;
+}
+
+.player-status {
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.player-status.ready {
+    background: #4caf50;
+    color: white;
+}
+
+.player-status.waiting {
+    background: #ff9800;
+    color: white;
+}
+
+/* Game screen */
+.game-info {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.game-status {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.attempts-info {
+    color: #666;
+    font-size: 1rem;
+}
+
+.game-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+/* Game area */
+.game-area {
+    background: #f9f9f9;
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.guess-form {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.guess-form h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+#guessInput {
+    padding: 12px 20px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    text-align: center;
+    width: 150px;
+    transition: border-color 0.3s ease;
+}
+
+#guessInput:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.attempts-list h4 {
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#attemptsList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.attempt-item {
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.attempt-guess {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.attempt-result {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.attempt-result.correct {
+    background: #4caf50;
+    color: white;
+}
+
+.attempt-result.high {
+    background: #f44336;
+    color: white;
+}
+
+.attempt-result.low {
+    background: #2196f3;
+    color: white;
+}
+
+.attempt-player {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+/* Chat area */
+.chat-area {
+    background: #f0f0f0;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+}
+
+.chat-header {
+    background: #667eea;
+    color: white;
+    padding: 15px;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: white;
+}
+
+.chat-message {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 15px;
+    word-wrap: break-word;
+}
+
+.chat-message-header {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.chat-message-content {
+    color: #333;
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px;
+    gap: 10px;
+    background: #f0f0f0;
+    border-radius: 0 0 10px 10px;
+}
+
+#chatInput {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+#chatInput:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#chatSendBtn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+/* Game result */
+.game-result {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.game-result.winner {
+    background: linear-gradient(45deg, #4caf50, #66bb6a);
+    color: white;
+}
+
+.game-result.loser {
+    background: linear-gradient(45deg, #f44336, #ef5350);
+    color: white;
+}
+
+.game-result.draw {
+    background: linear-gradient(45deg, #ff9800, #ffb74d);
+    color: white;
+}
+
+.result-title {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.result-details {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.end-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 2rem;
+    }
+
+    .game-content {
+        grid-template-columns: 1fr;
+    }
+
+    .chat-area {
+        height: 300px;
+    }
+
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #guessInput {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .end-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Turn indicator */
+.your-turn {
+    background: linear-gradient(45deg, #4caf50, #66bb6a) !important;
+    color: white !important;
+    animation: pulse 2s infinite;
+}
+
+.opponent-turn {
+    background: linear-gradient(45deg, #ff9800, #ffb74d) !important;
+    color: white !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Form disabled state */
+.guess-form.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

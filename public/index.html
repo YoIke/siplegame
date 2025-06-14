@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1対1数字当てゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 1対1数字当てゲーム</h1>
+            <p>1〜100の数字を当てよう！</p>
+        </header>
+
+        <!-- 接続状態 -->
+        <div id="connectionStatus" class="status-bar">
+            接続中...
+        </div>
+
+        <!-- マッチメイキング画面 -->
+        <div id="matchmaking" class="screen">
+            <h2>対戦相手を探す</h2>
+            <button id="findMatchBtn" class="btn primary">対戦相手を探す</button>
+            <div id="waitingMessage" class="hidden">
+                対戦相手を待っています... <span class="spinner">⏳</span>
+            </div>
+        </div>
+
+        <!-- ゲーム待機画面 -->
+        <div id="gameWaiting" class="screen hidden">
+            <h2>ゲーム準備</h2>
+            <div id="playersInfo"></div>
+            <button id="readyBtn" class="btn primary">準備完了</button>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="gameScreen" class="screen hidden">
+            <div class="game-info">
+                <div id="gameStatus" class="game-status"></div>
+                <div id="attemptsInfo" class="attempts-info"></div>
+            </div>
+
+            <div class="game-content">
+                <!-- ゲームエリア -->
+                <div class="game-area">
+                    <div id="guessForm" class="guess-form">
+                        <h3>数字を入力してください (1〜100)</h3>
+                        <div class="input-group">
+                            <input type="number" id="guessInput" min="1" max="100" placeholder="数字を入力">
+                            <button id="guessBtn" class="btn">予想</button>
+                        </div>
+                    </div>
+
+                    <div id="attempts" class="attempts-list">
+                        <h4>試行履歴</h4>
+                        <div id="attemptsList"></div>
+                    </div>
+                </div>
+
+                <!-- チャットエリア -->
+                <div class="chat-area">
+                    <div class="chat-header">
+                        <h4>💬 チャット</h4>
+                    </div>
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="メッセージを入力...">
+                        <button id="chatSendBtn" class="btn">送信</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲーム終了画面 -->
+        <div id="gameEnd" class="screen hidden">
+            <div id="gameResult" class="game-result"></div>
+            <div class="end-actions">
+                <button id="newGameBtn" class="btn primary">もう一度遊ぶ</button>
+                <button id="backToMenuBtn" class="btn">メニューに戻る</button>
+            </div>
+        </div>
+
+        <!-- 切断通知 -->
+        <div id="disconnectNotice" class="modal hidden">
+            <div class="modal-content">
+                <h3>相手が切断しました</h3>
+                <p>対戦相手が切断したため、ゲームを終了します。</p>
+                <button id="backToMenuFromDisconnect" class="btn primary">メニューに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
