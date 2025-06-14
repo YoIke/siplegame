@@ -47,6 +47,42 @@ header p {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+/* Password Entry Screen specific styles */
+#passwordEntryScreen h2 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    text-align: center; /* Center the heading */
+}
+
+#passwordEntryScreen .input-group {
+    justify-content: center; /* Center the input group items */
+    margin-bottom: 15px; /* Add some space below the input group */
+}
+
+#passwordInput {
+    padding: 12px 20px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    text-align: left; /* Align text to the left for typical input */
+    width: 300px; /* Set a fixed width */
+    transition: border-color 0.3s ease;
+}
+
+#passwordInput:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.error-message {
+    color: #ff4444; /* Red color for errors */
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 1.2em; /* Reserve space to prevent layout shift */
+}
+
 .status-bar.connected {
     background: rgba(76, 175, 80, 0.9);
     color: white;
@@ -64,6 +100,11 @@ header p {
     padding: 30px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+}
+
+/* Ensure password error specific message is also styled if needed, though generic .error-message should cover it */
+#passwordError {
+    /* Specific styles for passwordError if needed, otherwise .error-message applies */
 }
 
 .hidden {
@@ -276,7 +317,7 @@ header p {
 .input-group {
     display: flex;
     gap: 10px;
-    justify-content: center;
+    /* justify-content: center; Default behavior, can be overridden per screen */
     align-items: center;
 }
 
@@ -515,14 +556,29 @@ header p {
         height: 300px;
     }
 
+    /* General input group adjustments for mobile */
     .input-group {
         flex-direction: column;
         align-items: stretch;
     }
+    .input-group input[type="text"],
+    .input-group input[type="number"],
+    .input-group button {
+        width: 100%; /* Make input elements and buttons full width in column layout */
+        margin-bottom: 10px; /* Add some space between stacked items */
+    }
+
+    .input-group button:last-child {
+        margin-bottom: 0; /* Remove margin for the last item */
+    }
+
+    #passwordInput {
+        width: 100%; /* Ensure password input is full width on mobile */
+    }
 
     #guessInput {
         width: 100%;
-        margin-bottom: 10px;
+        /* margin-bottom: 10px; Already handled by general .input-group rule */
     }
 
     .end-actions {

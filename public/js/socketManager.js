@@ -81,6 +81,9 @@ class SocketManager {
         // ゲームイベント
         this.socket.on('gameStart', (data) => {
             console.log('ゲーム開始:', data);
+            if (this.gameState) {
+                this.gameState.setAwaitingGameSelectionResponse(false);
+            }
             if (this.gameManager) {
                 this.gameManager.startGame(data);
             }
@@ -154,6 +157,20 @@ class SocketManager {
 
         this.socket.on('opponentDisconnectedEndMatch', (data) => {
             console.log('Opponent disconnected, match ended:', data);
+            if (this.gameState && this.gameState.isAwaitingGameSelectionResponse) {
+                console.log('ゲーム選択応答待ちのため、opponentDisconnectedEndMatchをスキップ');
+                // 重要: この場合、相手の切断をユーザーに通知する別の方法が必要になる可能性があります。
+                // 例えば、一定時間応答がない場合にタイムアウト処理を入れるなど。
+                // しかし、今回のバグ修正の範囲では、まず意図しない画面遷移を防ぐことを優先します。
+                // もし本当に相手が切断していて gameStart が来ない場合、ユーザーは操作不能になる可能性がある。
+                // そのため、UI上での通知や、タイムアウトで gameSelection に戻すなどのフォールバックを検討する必要がある。
+                // 今回は、まず passwordEntryScreen への即時遷移を防ぐ。
+                // 代わりに gameSelection に戻すことを検討しても良いかもしれない。
+                // this.domElements.showScreen('gameSelection');
+                // this.uiManager.displayMessageAboveGameCards("対戦相手との接続に問題が発生しました。再度ゲームを選択してください。");
+                // this.gameState.setAwaitingGameSelectionResponse(false); // フラグをリセット
+                return;
+            }
             if (this.domElements && this.uiManager && this.gameState) {
                 this.gameState.reset(); // Full reset as the match is over
                 this.domElements.showScreen('passwordEntryScreen');
@@ -173,6 +190,9 @@ class SocketManager {
     }
 
     selectGame(gameType, roomId) {
+        if (this.gameState) {
+            this.gameState.setAwaitingGameSelectionResponse(true);
+        }
         this.socket.emit('selectGame', { gameType: gameType, roomId: roomId });
     }
 

@@ -12,6 +12,7 @@ class GameState {
         this.currentGameType = null;
         this.selectedColors = [null, null, null, null];
         this.currentColorSlot = 0;
+        this.isAwaitingGameSelectionResponse = false; // 追加: ゲーム選択応答待ちフラグ
     }
 
     setPlayerId(id) {
@@ -28,6 +29,10 @@ class GameState {
 
     setGameType(gameType) {
         this.currentGameType = gameType;
+    }
+
+    setAwaitingGameSelectionResponse(isAwaiting) { // 追加: フラグのセッター
+        this.isAwaitingGameSelectionResponse = isAwaiting;
     }
 
     updateTurn(currentPlayerName) {
