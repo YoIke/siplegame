@@ -50,6 +50,7 @@
             <h1>🎮 1対1ミニゲーム対戦</h1>
             <p>リアルタイム対戦ゲームを楽しもう！</p>
         </header>
+
         <!-- 接続状態 -->
         <div id="connectionStatus" class="status-bar">
             接続中...
@@ -74,7 +75,6 @@
                 </div>
             </div>
         </div>
-
         <!-- マッチメイキング画面 -->
         <div id="matchmaking" class="screen hidden">
             <h2 id="matchmakingTitle">対戦相手を探しています</h2>
@@ -93,6 +93,7 @@
             <div id="playersInfo"></div>
             <button id="readyBtn" class="btn primary">準備完了</button>
         </div>
+
         <!-- ゲーム画面 -->
         <div id="gameScreen" class="screen hidden">
             <div class="game-info">
@@ -141,40 +142,3 @@
                         <div id="attemptsList"></div>
                     </div>
                 </div>
-                <!-- チャットエリア -->
-                <div class="chat-area">
-                    <div class="chat-header">
-                        <h4>💬 チャット</h4>
-                    </div>
-                    <div id="chatMessages" class="chat-messages"></div>
-                    <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="メッセージを入力...">
-                        <button id="chatSendBtn" class="btn">送信</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ゲーム終了画面 -->
-        <div id="gameEnd" class="screen hidden">
-            <div id="gameResult" class="game-result"></div>
-            <div class="end-actions">
-                <button id="newGameBtn" class="btn primary">もう一度遊ぶ</button>
-                <button id="backToSelectionBtn" class="btn">ゲーム選択に戻る</button>
-            </div>
-        </div>
-
-        <!-- 切断通知 -->
-        <div id="disconnectNotice" class="modal hidden">
-            <div class="modal-content">
-                <h3>相手が切断しました</h3>
-                <p>対戦相手が切断したため、ゲームを終了します。</p>
-                <button id="backToSelectionFromDisconnect" class="btn primary">ゲーム選択に戻る</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="js/main.js"></script>
-</body>
-</html>
