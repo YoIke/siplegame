@@ -19,127 +19,255 @@
         </div>
 
         <!-- ゲーム選択画面 -->
-        <div id="gameSelection" class="screen">
+        <div id="gameSelection" class="screen" x-data="{
+            games: [
+                { id: 'numberguess', title: '数字当てゲーム', icon: '🎯', description: '1〜100の数字を当てよう！<br>「大きい」「小さい」のヒントで推理' },
+                { id: 'hitandblow', title: 'ヒットアンドブロー', icon: '🌈', description: '4つの色の組み合わせを当てよう！<br>Hit&Blowで推理' }
+            ],
+            selectGame(gameId) {
+                startMatchmaking(gameId);
+            }
+        }">
             <h2>ゲームを選択してください</h2>
             <div class="game-grid">
-                <div class="game-card" data-game="numberguess">
-                    <div class="game-icon">🎯</div>
-                    <h3>数字当てゲーム</h3>
-                    <p>1〜100の数字を当てよう！<br>「大きい」「小さい」のヒントで推理</p>
-                    <button class="btn primary">遊ぶ</button>
-                </div>
-                
-                <div class="game-card" data-game="hitandblow">
-                    <div class="game-icon">🌈</div>
-                    <h3>ヒットアンドブロー</h3>
-                    <p>4つの色の組み合わせを当てよう！<br>Hit&Blowで推理</p>
-                    <button class="btn primary">遊ぶ</button>
-                </div>
+                <template x-for="game in games" :key="game.id">
+                    <div class="game-card" :data-game="game.id" @click="selectGame(game.id)">
+                        <div class="game-icon" x-text="game.icon"></div>
+                        <h3 x-text="game.title"></h3>
+                        <p x-html="game.description"></p>
+                        <button class="btn primary">遊ぶ</button>
+                    </div>
+                </template>
             </div>
         </div>
 
         <!-- マッチメイキング画面 -->
-        <div id="matchmaking" class="screen hidden">
-            <h2 id="matchmakingTitle">対戦相手を探しています</h2>
+        <div id="matchmaking" class="screen hidden" x-data="{
+            cancelMatchmaking() {
+                socket.emit('backToGameSelection');
+            }
+        }">
+            <h2 id="matchmakingTitle" x-text="$store.matchmaking.title">対戦相手を探しています</h2>
             <div class="game-preview">
-                <div id="selectedGameInfo"></div>
+                <div id="selectedGameInfo">
+                    <div style="font-size: 3rem;" x-text="$store.matchmaking.gameIcon"></div>
+                    <h3 x-text="$store.matchmaking.gameTitle"></h3>
+                    <p x-html="$store.matchmaking.gameDescription"></p>
+                </div>
             </div>
             <div id="waitingMessage">
-                対戦相手を待っています... <span class="spinner">⏳</span>
+                <span x-text="$store.matchmaking.waitingText"></span>
+                <span class="spinner">⏳</span>
             </div>
-            <button id="cancelMatchBtn" class="btn secondary">キャンセル</button>
+            <button id="cancelMatchBtn" class="btn secondary" @click="cancelMatchmaking()">キャンセル</button>
         </div>
 
         <!-- ゲーム待機画面 -->
-        <div id="gameWaiting" class="screen hidden">
+        <div id="gameWaiting" class="screen hidden" x-data="{
+            handleReadyClick() {
+                socket.emit('playerReady');
+                $store.gameWaiting.isReady = true;
+                $store.gameWaiting.readyButtonText = '準備完了済み';
+            }
+        }">
             <h2>ゲーム準備</h2>
-            <div id="playersInfo"></div>
-            <button id="readyBtn" class="btn primary">準備完了</button>
+            <div id="playersInfo">
+                <template x-for="player in $store.gameWaiting.players" :key="player.id">
+                    <div class="player-item">
+                        <span x-text="player.name + (player.id === $store.gameWaiting.playerId ? ' (あなた)' : '')"></span>
+                        <span class="player-status"
+                              :class="player.ready ? 'ready' : 'waiting'"
+                              x-text="player.ready ? '準備完了' : '準備中'">
+                        </span>
+                    </div>
+                </template>
+            </div>
+            <button id="readyBtn" class="btn primary"
+                    x-on:click="handleReadyClick()"
+                    :disabled="$store.gameWaiting.isReady"
+                    x-text="$store.gameWaiting.readyButtonText">
+                準備完了
+            </button>
         </div>
 
         <!-- ゲーム画面 -->
-        <div id="gameScreen" class="screen hidden">
+        <div id="gameScreen" class="screen hidden" x-data="{}">
             <div class="game-info">
-                <div id="gameStatus" class="game-status"></div>
-                <div id="attemptsInfo" class="attempts-info"></div>
+                <div id="gameStatus" class="game-status" :class="$store.gameScreen.gameStatusClass" x-text="$store.gameScreen.gameStatusText"></div>
+                <div id="attemptsInfo" class="attempts-info" x-text="$store.gameScreen.attemptsInfoText"></div>
             </div>
 
             <div class="game-content">
                 <!-- ゲームエリア -->
                 <div class="game-area">
                     <!-- 数字当てゲーム用 -->
-                    <div id="numberGuessGame" class="game-interface hidden">
+                    <div id="numberGuessGame" class="game-interface" x-show="$store.gameScreen.currentGameType === 'numberguess'" x-data="{ makeGuess() { if (!$store.gameScreen.isMyTurn) return; const currentGuess = parseInt(this.$store.numberGuess.guess); if (isNaN(currentGuess) || currentGuess < 1 || currentGuess > 100) { alert('1〜100の数字を入力してください'); return; } socket.emit('makeMove', { guess: currentGuess }); } }">
                         <div class="guess-form">
                             <h3>数字を入力してください (1〜100)</h3>
                             <div class="input-group">
-                                <input type="number" id="guessInput" min="1" max="100" placeholder="数字を入力">
-                                <button id="guessBtn" class="btn">予想</button>
+                                <input type="number" id="guessInput" min="1" max="100" placeholder="数字を入力" :disabled="!$store.gameScreen.isMyTurn" x-model.number="$store.numberGuess.guess" x-on:keypress.enter="makeGuess()">
+                                <button id="guessBtn" class="btn" :disabled="!$store.gameScreen.isMyTurn" x-on:click="makeGuess()">予想</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- ヒットアンドブロー用 -->
-                    <div id="hitAndBlowGame" class="game-interface hidden">
+                    <div id="hitAndBlowGame" class="game-interface" x-show="$store.gameScreen.currentGameType === 'hitandblow'" x-data="{
+                        colorsAvailable: ['red', 'blue', 'green', 'yellow', 'pink', 'white'],
+                        selectColor(color) {
+                            if (!$store.gameScreen.isMyTurn) return;
+                            if (this.$store.hitAndBlow.currentColorSlot < 4) {
+                                this.$store.hitAndBlow.selectedColors[this.$store.hitAndBlow.currentColorSlot] = color;
+                                this.$store.hitAndBlow.selectedColors = [...this.$store.hitAndBlow.selectedColors]; // Force reactivity
+                                this.$store.hitAndBlow.currentColorSlot = Math.min(this.$store.hitAndBlow.currentColorSlot + 1, 3);
+                            }
+                        },
+                        selectSlot(slotIndex) {
+                            if (!$store.gameScreen.isMyTurn) return;
+                            this.$store.hitAndBlow.currentColorSlot = slotIndex;
+                        },
+                        submitGuess() {
+                            if (!this.$store.gameScreen.isMyTurn) return;
+                            const allSelected = this.$store.hitAndBlow.selectedColors.every(c => c !== null);
+                            if (!allSelected) {
+                                alert('4つの色をすべて選択してください');
+                                return;
+                            }
+                            socket.emit('makeMove', { colors: [...this.$store.hitAndBlow.selectedColors] });
+                        },
+                        isSubmitDisabled() { // Combined disabled logic
+                            return !this.$store.gameScreen.isMyTurn || !this.$store.hitAndBlow.selectedColors.every(c => c !== null);
+                        }
+                    }">
                         <div class="color-selection">
                             <h3>4つの色を選択してください</h3>
                             <div class="color-palette">
-                                <div class="color-option" data-color="red" style="background-color: #ff4444;"></div>
-                                <div class="color-option" data-color="blue" style="background-color: #4444ff;"></div>
-                                <div class="color-option" data-color="green" style="background-color: #44ff44;"></div>
-                                <div class="color-option" data-color="yellow" style="background-color: #ffff44;"></div>
-                                <div class="color-option" data-color="pink" style="background-color: #ff44ff;"></div>
-                                <div class="color-option" data-color="white" style="background-color: #ffffff; border: 2px solid #ccc;"></div>
+                                <template x-for="color in colorsAvailable" :key="color">
+                                    <div class="color-option"
+                                         :data-color="color"
+                                         :style="{ backgroundColor: getColorCode(color), border: color === 'white' ? '2px solid #ccc': 'none'}"
+                                         @click="selectColor(color)">
+                                    </div>
+                                </template>
                             </div>
                             <div class="selected-colors">
-                                <div class="color-slot" data-slot="0"></div>
-                                <div class="color-slot" data-slot="1"></div>
-                                <div class="color-slot" data-slot="2"></div>
-                                <div class="color-slot" data-slot="3"></div>
+                                <template x-for="(slotColor, index) in $store.hitAndBlow.selectedColors" :key="$id('slot-' + index)">
+                                    <div class="color-slot"
+                                         :class="{ 'filled': slotColor }"
+                                         :style="{
+                                             backgroundColor: slotColor ? getColorCode(slotColor) : 'transparent',
+                                             borderColor: index === $store.hitAndBlow.currentColorSlot ? '#333' : (slotColor ? '#333' : '#ccc'),
+                                             borderWidth: index === $store.hitAndBlow.currentColorSlot ? '4px' : '3px',
+                                             borderStyle: slotColor ? 'solid' : 'dashed'
+                                         }"
+                                         @click="selectSlot(index)">
+                                    </div>
+                                </template>
                             </div>
-                            <button id="submitColorsBtn" class="btn">色を決定</button>
+                            <button id="submitColorsBtn" class="btn" @click="submitGuess()" :disabled="isSubmitDisabled()">色を決定</button>
                         </div>
                     </div>
 
                     <div id="attempts" class="attempts-list">
                         <h4>試行履歴</h4>
-                        <div id="attemptsList"></div>
+                        <div id="attemptsList">
+                            <template x-if="$store.gameScreen.currentGameType === 'numberguess'">
+                                <template x-for="attempt in $store.numberGuess.history" :key="$id('ng-attempt')">
+                                    <div class="attempt-item">
+                                        <div>
+                                            <div class="attempt-player" x-text="attempt.player"></div>
+                                            <div class="attempt-guess" x-text="attempt.guess"></div>
+                                        </div>
+                                        <div class="attempt-result" :class="attempt.resultClass" x-text="attempt.result"></div>
+                                    </div>
+                                </template>
+                            </template>
+                            <template x-if="$store.gameScreen.currentGameType === 'hitandblow'">
+                                <template x-for="attempt in $store.hitAndBlow.history" :key="$id('hb-attempt-' + Date.now() + '-' + Math.random())">
+                                    <div class="hit-blow-attempt">
+                                        <div>
+                                            <div class="attempt-player" x-text="attempt.player"></div>
+                                            <div class="attempt-colors">
+                                                <template x-for="(color, cIndex) in attempt.guess" :key="$id('hb-g-color-' + Date.now() + '-' + Math.random() + '-' + cIndex)">
+                                                    <div class="attempt-color" :style="{ backgroundColor: getColorCode(color), border: color === 'white' ? '2px solid #999' : '2px solid #333' }"></div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="attempt-result-hb">
+                                            <div class="hit-count" x-text="'Hit: ' + attempt.hit"></div>
+                                            <div class="blow-count" x-text="'Blow: ' + attempt.blow"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
                 <!-- チャットエリア -->
-                <div class="chat-area">
+                <div class="chat-area" x-data="{
+                    sendMessage() {
+                        const message = this.$store.chat.currentMessage.trim();
+                        if (message) {
+                            socket.emit('chatMessage', { message: message });
+                            this.$store.chat.currentMessage = '';
+                        }
+                    }
+                }">
                     <div class="chat-header">
                         <h4>💬 チャット</h4>
                     </div>
-                    <div id="chatMessages" class="chat-messages"></div>
+                    <div id="chatMessages" class="chat-messages">
+                        <template x-for="msg in $store.chat.messages" :key="$id('chat-msg-' + Date.now() + '-' + Math.random())">
+                            <div class="chat-message">
+                                <div class="chat-message-header">
+                                    <span x-text="msg.player"></span> - <span x-text="msg.timestamp"></span>
+                                </div>
+                                <div class="chat-message-content" x-text="msg.message"></div>
+                            </div>
+                        </template>
+                    </div>
                     <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="メッセージを入力...">
-                        <button id="chatSendBtn" class="btn">送信</button>
+                        <input type="text" id="chatInput" placeholder="メッセージを入力..." x-model="$store.chat.currentMessage" @keypress.enter="sendMessage()">
+                        <button id="chatSendBtn" class="btn" @click="sendMessage()">送信</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- ゲーム終了画面 -->
-        <div id="gameEnd" class="screen hidden">
-            <div id="gameResult" class="game-result"></div>
+        <div id="gameEnd" class="screen hidden" x-data="{
+            requestNewGame() {
+                socket.emit('newGame');
+            },
+            backToSelection() {
+                socket.emit('backToGameSelection');
+            }
+        }">
+            <div id="gameResult" class="game-result" :class="$store.gameEnd.resultClass" x-html="$store.gameEnd.resultHTML"></div>
             <div class="end-actions">
-                <button id="newGameBtn" class="btn primary">もう一度遊ぶ</button>
-                <button id="backToSelectionBtn" class="btn">ゲーム選択に戻る</button>
+                <button id="newGameBtn" class="btn primary" @click="requestNewGame()">もう一度遊ぶ</button>
+                <button id="backToSelectionBtn" class="btn" @click="backToSelection()">ゲーム選択に戻る</button>
             </div>
         </div>
 
         <!-- 切断通知 -->
-        <div id="disconnectNotice" class="modal hidden">
+        <div id="disconnectNotice" class="modal" x-show="$store.modals.showDisconnectNotice" x-data="{
+            closeAndGoToSelection() {
+                this.$store.modals.showDisconnectNotice = false;
+                socket.emit('backToGameSelection');
+            }
+        }" style="display: none;"> {/* Added style="display: none;" to prevent flash of content before Alpine hides it if not initially hidden via class */}
             <div class="modal-content">
                 <h3>相手が切断しました</h3>
                 <p>対戦相手が切断したため、ゲームを終了します。</p>
-                <button id="backToSelectionFromDisconnect" class="btn primary">ゲーム選択に戻る</button>
+                <button id="backToSelectionFromDisconnect" class="btn primary" @click="closeAndGoToSelection()">ゲーム選択に戻る</button>
             </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>

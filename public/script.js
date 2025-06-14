@@ -1,55 +1,56 @@
+// Make this global
+function getColorCode(colorName) {
+    const colorMap = {
+        red: '#ff4444',
+        blue: '#4444ff',
+        green: '#44ff44',
+        yellow: '#ffff44',
+        pink: '#ff44ff',
+        white: '#ffffff'
+    };
+    return colorMap[colorName] || '#ccc';
+}
+
+function getColorDisplay(colors) {
+    return colors.map(color => `<span style="color: ${getColorCode(color)};">●</span>`).join(' ');
+}
+
 // Socket.io接続
 const socket = io();
 
 // DOM要素
 const elements = {
+    // Retain elements for screens managed by showScreen and vital global elements
     connectionStatus: document.getElementById('connectionStatus'),
     gameSelection: document.getElementById('gameSelection'),
     matchmaking: document.getElementById('matchmaking'),
     gameWaiting: document.getElementById('gameWaiting'),
     gameScreen: document.getElementById('gameScreen'),
     gameEnd: document.getElementById('gameEnd'),
-    disconnectNotice: document.getElementById('disconnectNotice'),
-    
-    matchmakingTitle: document.getElementById('matchmakingTitle'),
-    selectedGameInfo: document.getElementById('selectedGameInfo'),
-    waitingMessage: document.getElementById('waitingMessage'),
-    cancelMatchBtn: document.getElementById('cancelMatchBtn'),
-    readyBtn: document.getElementById('readyBtn'),
-    playersInfo: document.getElementById('playersInfo'),
-    
-    gameStatus: document.getElementById('gameStatus'),
-    attemptsInfo: document.getElementById('attemptsInfo'),
-    attemptsList: document.getElementById('attemptsList'),
-    
-    // 数字当てゲーム
-    numberGuessGame: document.getElementById('numberGuessGame'),
-    guessInput: document.getElementById('guessInput'),
-    guessBtn: document.getElementById('guessBtn'),
-    
-    // ヒットアンドブロー
-    hitAndBlowGame: document.getElementById('hitAndBlowGame'),
-    submitColorsBtn: document.getElementById('submitColorsBtn'),
-    
-    chatMessages: document.getElementById('chatMessages'),
-    chatInput: document.getElementById('chatInput'),
-    chatSendBtn: document.getElementById('chatSendBtn'),
-    
-    gameResult: document.getElementById('gameResult'),
-    newGameBtn: document.getElementById('newGameBtn'),
-    backToSelectionBtn: document.getElementById('backToSelectionBtn'),
-    backToSelectionFromDisconnect: document.getElementById('backToSelectionFromDisconnect')
+    // disconnectNotice: document.getElementById('disconnectNotice'), // Now fully managed by Alpine x-show and store
+
+    // Retain elements used by Alpine effects for now, or if other non-Alpine JS needs them
+    attemptsList: document.getElementById('attemptsList'), // Used by Alpine effects for scrolling
+    chatMessages: document.getElementById('chatMessages'), // Used by Alpine effects for scrolling
+
+    // Removed elements that are now fully managed by Alpine.js:
+    // matchmakingTitle, selectedGameInfo, waitingMessage, cancelMatchBtn,
+    // readyBtn, playersInfo, gameStatus, attemptsInfo,
+    // numberGuessGame, guessInput, guessBtn,
+    // hitAndBlowGame, submitColorsBtn,
+    // chatInput, chatSendBtn,
+    // gameResult, newGameBtn, backToSelectionBtn, backToSelectionFromDisconnect
 };
 
 // ゲーム状態
-let gameState = {
+let gameState = { // Properties managed by Alpine stores are commented out or removed
     currentRoom: null,
-    playerId: null,
-    isMyTurn: false,
-    players: [],
-    currentGameType: null,
-    selectedColors: [null, null, null, null],
-    currentColorSlot: 0
+    playerId: null, // Still essential for identifying the client
+    // isMyTurn: false, // Managed by Alpine.store('gameScreen').isMyTurn
+    players: [], // Holds authoritative player list from server, used to derive Alpine store values
+    // currentGameType: null, // Managed by Alpine.store('gameScreen').currentGameType
+    // selectedColors: [null, null, null, null], // Managed by Alpine.store('hitAndBlow').selectedColors
+    // currentColorSlot: 0 // Managed by Alpine.store('hitAndBlow').currentColorSlot
 };
 
 // ゲーム情報
@@ -75,22 +76,25 @@ function showScreen(screenName) {
 }
 
 // ゲームインターフェース切り替え
-function showGameInterface(gameType) {
-    document.querySelectorAll('.game-interface').forEach(interface => {
-        interface.classList.add('hidden');
-    });
-    
-    if (gameType === 'numberguess') {
-        elements.numberGuessGame.classList.remove('hidden');
-    } else if (gameType === 'hitandblow') {
-        elements.hitAndBlowGame.classList.remove('hidden');
-    }
-}
+// function showGameInterface(gameType) { // Replaced by Alpine.js x-show directives
+//     document.querySelectorAll('.game-interface').forEach(interface => {
+//         interface.classList.add('hidden');
+//     });
+
+//     if (gameType === 'numberguess') {
+//         elements.numberGuessGame.classList.remove('hidden');
+//     } else if (gameType === 'hitandblow') {
+//         elements.hitAndBlowGame.classList.remove('hidden');
+//     }
+// }
 
 // Socket.io イベントリスナー
 socket.on('connect', () => {
     console.log('サーバーに接続しました');
     gameState.playerId = socket.id;
+    if (Alpine.store('gameWaiting')) {
+        Alpine.store('gameWaiting').playerId = socket.id;
+    }
     elements.connectionStatus.textContent = '接続済み';
     elements.connectionStatus.className = 'status-bar connected';
 });
@@ -103,74 +107,111 @@ socket.on('disconnect', () => {
 
 socket.on('waitingForOpponent', (data) => {
     const game = gameInfo[data.gameType];
-    elements.matchmakingTitle.textContent = `${game.title} - 対戦相手を探しています`;
-    elements.selectedGameInfo.innerHTML = `
-        <div style="font-size: 3rem;">${game.icon}</div>
-        <h3>${game.title}</h3>
-        <p>${game.description}</p>
-    `;
+    Alpine.store('matchmaking').title = `${game.title} - 対戦相手を探しています`;
+    Alpine.store('matchmaking').gameIcon = game.icon;
+    Alpine.store('matchmaking').gameTitle = game.title;
+    // Ensure description is treated as a string, not HTML, if it comes from gameInfo
+    Alpine.store('matchmaking').gameDescription = game.description;
+    // The waitingText can remain as default or be updated if needed
 });
 
 socket.on('matchFound', (data) => {
     console.log('マッチが見つかりました:', data);
     gameState.currentRoom = data.roomId;
-    gameState.players = data.players;
-    gameState.currentGameType = data.gameType;
+    gameState.players = data.players; // Still set here, used by gameStart/moveResult to find 'myPlayer'
+    // gameState.currentGameType = data.gameType; // Alpine store is source of truth
+    if (Alpine.store('gameScreen')) { // Ensure store exists
+      Alpine.store('gameScreen').currentGameType = data.gameType; // Set Alpine store
+    }
     
+    // Update Alpine store for gameWaiting screen
+    if (Alpine.store('gameWaiting')) {
+        Alpine.store('gameWaiting').players = data.players;
+        Alpine.store('gameWaiting').isReady = false;
+        Alpine.store('gameWaiting').readyButtonText = '準備完了';
+    }
     showScreen('gameWaiting');
-    updatePlayersInfo();
+    // updatePlayersInfo(); // Replaced by Alpine.js
 });
 
 socket.on('playerReadyUpdate', (data) => {
-    gameState.players = data.players;
-    updatePlayersInfo();
+    // gameState.players = data.players; // Managed by Alpine store
+    if (Alpine.store('gameWaiting')) {
+        Alpine.store('gameWaiting').players = data.players;
+    }
+    // updatePlayersInfo(); // Replaced by Alpine.js
 });
 
 socket.on('gameStart', (data) => {
     console.log('ゲーム開始:', data);
-    showScreen('gameScreen');
-    showGameInterface(data.gameType);
-    
-    elements.gameStatus.textContent = `現在のターン: ${data.currentPlayer}`;
-    
+    const gameScreenStore = Alpine.store('gameScreen');
+    gameScreenStore.currentGameType = data.gameType;
+    // Ensure gameState.players is up-to-date before finding current player
+    // This might require 'players' to be passed in 'gameStart' data or rely on 'matchFound' having set it.
+    // Assuming gameState.players is correctly populated from 'matchFound' or similar event.
+    const myPlayerStart = gameState.players.find(p => p.id === gameState.playerId);
+    // gameState.isMyTurn = myPlayerStart && myPlayerStart.name === data.currentPlayer; // Set in store
+    gameScreenStore.isMyTurn = myPlayerStart && myPlayerStart.name === data.currentPlayer;
+    gameScreenStore.gameStatusText = `現在のターン: ${data.currentPlayer}`;
+    gameScreenStore.gameStatusClass = gameState.isMyTurn ? 'game-status your-turn' : 'game-status opponent-turn';
+
+    // Hide disconnect notice if it was shown
+    if (Alpine.store('modals')) {
+        Alpine.store('modals').showDisconnectNotice = false;
+    }
+
     if (data.gameType === 'numberguess') {
-        elements.attemptsInfo.textContent = `範囲: ${data.targetRange} | 最大試行回数: ${data.maxAttempts}`;
+        gameScreenStore.attemptsInfoText = `範囲: ${data.targetRange} | 最大試行回数: ${data.maxAttempts}`;
+        Alpine.store('numberGuess').guess = '';
+        Alpine.store('numberGuess').history = [];
     } else if (data.gameType === 'hitandblow') {
-        elements.attemptsInfo.textContent = `色の組み合わせ: ${data.codeLength}色 | 最大試行回数: ${data.maxAttempts}`;
+        gameScreenStore.attemptsInfoText = `色の組み合わせ: ${data.codeLength}色 | 最大試行回数: ${data.maxAttempts}`;
+        resetHitAndBlowAlpineState(); // Reset H&B store
     }
     
-    elements.attemptsList.innerHTML = '';
-    resetColorSelection();
-    
-    // ターン表示の更新
-    updateTurnDisplay(data.currentPlayer);
+    // elements.attemptsList.innerHTML = ''; // Replaced by specific store resets or Alpine templates
+    // resetColorSelection(); // Replaced by resetHitAndBlowAlpineState for H&B
+
+    showScreen('gameScreen');
+    // showGameInterface(data.gameType); // Replaced by Alpine x-show
+    // updateTurnDisplay(data.currentPlayer); // Logic integrated into this handler
 });
 
 socket.on('moveResult', (data) => {
     console.log('移動結果:', data);
+    const gameScreenStore = Alpine.store('gameScreen');
+    const numberGuessStore = Alpine.store('numberGuess');
     
-    // 試行履歴を更新
-    displayAttempt(data);
+    // displayAttempt(data); // Replaced by store updates and Alpine templates
     
-    // 次のプレイヤーの表示を更新
     if (data.nextPlayer) {
-        elements.gameStatus.textContent = `現在のターン: ${data.nextPlayer}`;
-        updateTurnDisplay(data.nextPlayer);
+        const myPlayerMove = gameState.players.find(p => p.id === gameState.playerId);
+        // gameState.isMyTurn = myPlayerMove && myPlayerMove.name === data.nextPlayer; // Set in store
+        gameScreenStore.isMyTurn = myPlayerMove && myPlayerMove.name === data.nextPlayer;
+        gameScreenStore.gameStatusText = `現在のターン: ${data.nextPlayer}`;
+        gameScreenStore.gameStatusClass = gameState.isMyTurn ? 'game-status your-turn' : 'game-status opponent-turn';
     }
     
-    // 入力をクリア
-    if (gameState.currentGameType === 'numberguess') {
-        elements.guessInput.value = '';
-    } else if (gameState.currentGameType === 'hitandblow') {
-        resetColorSelection();
+    if (gameScreenStore.currentGameType === 'numberguess') {
+        let resultClass = '';
+        if (data.result === '正解！') resultClass = 'correct';
+        else if (data.result === '大きい') resultClass = 'high';
+        else if (data.result === '小さい') resultClass = 'low';
+        numberGuessStore.history.push({ player: data.player, guess: data.guess, result: data.result, resultClass: resultClass });
+        numberGuessStore.guess = ''; // Reset input field
+    } else if (gameScreenStore.currentGameType === 'hitandblow') {
+        Alpine.store('hitAndBlow').history.push({ player: data.player, guess: [...data.guess], hit: data.hit, blow: data.blow });
+        Alpine.store('hitAndBlow').selectedColors = [null, null, null, null];
+        Alpine.store('hitAndBlow').currentColorSlot = 0;
+        // resetColorSelection(); // Replaced by individual store property resets
     }
     
-    // 試行回数の更新
-    elements.attemptsInfo.textContent = `試行回数: ${data.attempts.length}/10`;
+    gameScreenStore.attemptsInfoText = `試行回数: ${data.attempts.length}/10`;
 });
 
 socket.on('gameEnd', (data) => {
     console.log('ゲーム終了:', data);
+    const gameEndStore = Alpine.store('gameEnd');
     
     let resultHtml = '';
     let resultClass = '';
@@ -209,8 +250,10 @@ socket.on('gameEnd', (data) => {
         resultClass = 'draw';
     }
     
-    elements.gameResult.innerHTML = resultHtml;
-    elements.gameResult.className = `game-result ${resultClass}`;
+    gameEndStore.resultHTML = resultHtml;
+    gameEndStore.resultClass = resultClass;
+    // elements.gameResult.innerHTML = resultHtml; // Replaced by Alpine binding
+    // elements.gameResult.className = `game-result ${resultClass}`; // Replaced by Alpine binding
     
     setTimeout(() => {
         showScreen('gameEnd');
@@ -218,17 +261,26 @@ socket.on('gameEnd', (data) => {
 });
 
 socket.on('newChatMessage', (data) => {
-    displayChatMessage(data);
+    // displayChatMessage(data); // Replaced by Alpine store update
+    Alpine.store('chat').messages.push({ player: data.player, timestamp: data.timestamp, message: data.message });
 });
 
 socket.on('newGameReady', (data) => {
-    gameState.players = data.players;
+    // gameState.players = data.players; // Managed by Alpine store
+    if (Alpine.store('gameWaiting')) {
+        Alpine.store('gameWaiting').players = data.players;
+        Alpine.store('gameWaiting').isReady = false; // Reset ready state for new game
+        Alpine.store('gameWaiting').readyButtonText = '準備完了';
+    }
     showScreen('gameWaiting');
-    updatePlayersInfo();
+    // updatePlayersInfo(); // Replaced by Alpine.js
 });
 
 socket.on('opponentDisconnected', () => {
-    elements.disconnectNotice.classList.remove('hidden');
+    // elements.disconnectNotice.classList.remove('hidden'); // Handled by Alpine store
+    if (Alpine.store('modals')) {
+        Alpine.store('modals').showDisconnectNotice = true;
+    }
 });
 
 socket.on('backToGameSelection', () => {
@@ -236,322 +288,242 @@ socket.on('backToGameSelection', () => {
 });
 
 // イベントリスナー
-// ゲーム選択
-document.querySelectorAll('.game-card').forEach(card => {
-    card.addEventListener('click', () => {
-        const gameType = card.dataset.game;
-        startMatchmaking(gameType);
-    });
-});
-
 // マッチメイキング関連
-elements.cancelMatchBtn.addEventListener('click', () => {
-    socket.emit('backToGameSelection');
-});
+// elements.cancelMatchBtn event listener removed as it's handled by Alpine.js now
 
-elements.readyBtn.addEventListener('click', () => {
-    socket.emit('playerReady');
-    elements.readyBtn.disabled = true;
-    elements.readyBtn.textContent = '準備完了済み';
-});
+// elements.readyBtn event listener removed as it's handled by Alpine.js now in HTML
 
-// 数字当てゲーム
-elements.guessBtn.addEventListener('click', () => {
-    makeNumberGuess();
-});
+// Number Guess game event listeners removed (will be handled by Alpine x-on)
+// elements.guessBtn.addEventListener('click', () => { makeNumberGuess(); });
+// elements.guessInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { makeNumberGuess(); } });
 
-elements.guessInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        makeNumberGuess();
-    }
-});
+// Hit and Blow event listeners removed (will be handled by Alpine x-on)
+// elements.submitColorsBtn.addEventListener('click', () => { submitColors(); });
+// document.querySelectorAll('.color-option').forEach(option => { /* ... */ });
+// document.querySelectorAll('.color-slot').forEach(slot => { /* ... */ });
 
-// ヒットアンドブロー
-elements.submitColorsBtn.addEventListener('click', () => {
-    submitColors();
-});
+// Chat event listeners removed (handled by Alpine x-on in HTML)
+// elements.chatSendBtn.addEventListener('click', () => { sendChatMessage(); });
+// elements.chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { sendChatMessage(); } });
 
-// 色選択
-document.querySelectorAll('.color-option').forEach(option => {
-    option.addEventListener('click', () => {
-        selectColor(option.dataset.color, option);
-    });
-});
+// Game end screen button event listeners removed (handled by Alpine x-on in HTML)
+// elements.newGameBtn.addEventListener('click', () => { socket.emit('newGame'); });
+// elements.backToSelectionBtn.addEventListener('click', () => { socket.emit('backToGameSelection'); });
+// }); // This closing bracket was mismatched / an error from previous steps, removing it.
 
-// 色スロットクリック
-document.querySelectorAll('.color-slot').forEach(slot => {
-    slot.addEventListener('click', () => {
-        const slotIndex = parseInt(slot.dataset.slot);
-        gameState.currentColorSlot = slotIndex;
-        updateColorSlotHighlight();
-    });
-});
-
-// チャット
-elements.chatSendBtn.addEventListener('click', () => {
-    sendChatMessage();
-});
-
-elements.chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendChatMessage();
-    }
-});
-
-// ゲーム終了画面
-elements.newGameBtn.addEventListener('click', () => {
-    socket.emit('newGame');
-});
-
-elements.backToSelectionBtn.addEventListener('click', () => {
-    socket.emit('backToGameSelection');
-});
-
-elements.backToSelectionFromDisconnect.addEventListener('click', () => {
-    elements.disconnectNotice.classList.add('hidden');
-    socket.emit('backToGameSelection');
-});
+// elements.backToSelectionFromDisconnect.addEventListener('click', () => { // Handled by Alpine
+//     elements.disconnectNotice.classList.add('hidden');
+//     socket.emit('backToGameSelection');
+// });
 
 // ヘルパー関数
 function startMatchmaking(gameType) {
-    gameState.currentGameType = gameType;
+    // gameState.currentGameType = gameType; // Alpine store is source of truth
+    if (Alpine.store('gameScreen')) {
+        Alpine.store('gameScreen').currentGameType = gameType;
+    }
+    const game = gameInfo[gameType];
+    if (game) {
+        Alpine.store('matchmaking').title = `${game.title} - 対戦相手を探しています`;
+        Alpine.store('matchmaking').gameIcon = game.icon;
+        Alpine.store('matchmaking').gameTitle = game.title;
+        Alpine.store('matchmaking').gameDescription = game.description;
+    } else {
+        // Reset to default if gameType is invalid, though this case should ideally not happen
+        Alpine.store('matchmaking').title = '対戦相手を探しています';
+        Alpine.store('matchmaking').gameIcon = '';
+        Alpine.store('matchmaking').gameTitle = '';
+        Alpine.store('matchmaking').gameDescription = '';
+    }
+    Alpine.store('matchmaking').waitingText = '対戦相手を待っています... ⏳'; // Reset waiting text
+
     socket.emit('findMatch', { gameType: gameType });
     showScreen('matchmaking');
 }
 
-function updatePlayersInfo() {
-    let html = '';
-    gameState.players.forEach(player => {
-        const statusText = player.ready ? '準備完了' : '準備中';
-        const statusClass = player.ready ? 'ready' : 'waiting';
-        const isMe = player.id === gameState.playerId ? ' (あなた)' : '';
-        
-        html += `
-            <div class="player-item">
-                <span>${player.name}${isMe}</span>
-                <span class="player-status ${statusClass}">${statusText}</span>
-            </div>
-        `;
-    });
-    elements.playersInfo.innerHTML = html;
-}
+// function updatePlayersInfo() { // Fully replaced by Alpine.js in gameWaiting screen
+// }
 
-function updateTurnDisplay(currentPlayerName) {
-    const myPlayer = gameState.players.find(p => p.id === gameState.playerId);
-    gameState.isMyTurn = myPlayer && myPlayer.name === currentPlayerName;
+// function updateTurnDisplay(currentPlayerName) { // Replaced by direct store updates
+//     // Logic moved into socket.on('gameStart') and socket.on('moveResult')
+// }
+
+// function enableGameInterface() { // Replaced by Alpine x-bind:disabled
+// }
+
+// function disableGameInterface() { // Replaced by Alpine x-bind:disabled
+// }
+
+// function makeNumberGuess() { // Replaced by Alpine component method in HTML
+//     if (!gameState.isMyTurn) return;
     
-    if (gameState.isMyTurn) {
-        elements.gameStatus.className = 'game-status your-turn';
-        enableGameInterface();
-    } else {
-        elements.gameStatus.className = 'game-status opponent-turn';
-        disableGameInterface();
+//     const guess = parseInt(elements.guessInput.value);
+//     if (isNaN(guess) || guess < 1 || guess > 100) {
+//         alert('1〜100の数字を入力してください');
+//         return;
+//     }
+    
+//     socket.emit('makeMove', { guess: guess });
+// }
+
+// Hit and Blow related functions removed (logic moved to Alpine component or store)
+// function selectColor(color, element) { /* ... */ }
+// function updateColorSlots() { /* ... */ }
+// function updateColorSlotHighlight() { /* ... */ }
+// function submitColors() { /* ... */ }
+// function resetColorSelection() { /* ... */ }
+
+// displayAttempt function is now removed.
+
+// Helper function to reset Hit and Blow Alpine store state
+function resetHitAndBlowAlpineState() {
+    if (Alpine.store('hitAndBlow')) { // Ensure store exists before using
+        Alpine.store('hitAndBlow').selectedColors = [null, null, null, null];
+        Alpine.store('hitAndBlow').currentColorSlot = 0;
+        Alpine.store('hitAndBlow').history = [];
     }
+    // Visual updates like highlighting slots or button states will be reactive via Alpine.
 }
 
-function enableGameInterface() {
-    if (gameState.currentGameType === 'numberguess') {
-        elements.guessInput.disabled = false;
-        elements.guessBtn.disabled = false;
-    } else if (gameState.currentGameType === 'hitandblow') {
-        elements.submitColorsBtn.disabled = false;
-        document.querySelectorAll('.color-option').forEach(opt => opt.style.pointerEvents = 'auto');
-        document.querySelectorAll('.color-slot').forEach(slot => slot.style.pointerEvents = 'auto');
-    }
-}
+// function sendChatMessage() { // Replaced by Alpine component method in HTML
+//     const message = elements.chatInput.value.trim();
+//     if (message) {
+//         socket.emit('chatMessage', { message: message });
+//         elements.chatInput.value = '';
+//     }
+// }
 
-function disableGameInterface() {
-    if (gameState.currentGameType === 'numberguess') {
-        elements.guessInput.disabled = true;
-        elements.guessBtn.disabled = true;
-    } else if (gameState.currentGameType === 'hitandblow') {
-        elements.submitColorsBtn.disabled = true;
-        document.querySelectorAll('.color-option').forEach(opt => opt.style.pointerEvents = 'none');
-        document.querySelectorAll('.color-slot').forEach(slot => slot.style.pointerEvents = 'none');
-    }
-}
+// function displayChatMessage(data) { // Replaced by Alpine store update and template
+//     const messageDiv = document.createElement('div');
+//     messageDiv.className = 'chat-message';
+//     messageDiv.innerHTML = `
+//         <div class="chat-message-header">${data.player} - ${data.timestamp}</div>
+//         <div class="chat-message-content">${data.message}</div>
+//     `;
 
-function makeNumberGuess() {
-    if (!gameState.isMyTurn) return;
-    
-    const guess = parseInt(elements.guessInput.value);
-    if (isNaN(guess) || guess < 1 || guess > 100) {
-        alert('1〜100の数字を入力してください');
-        return;
-    }
-    
-    socket.emit('makeMove', { guess: guess });
-}
-
-// ヒットアンドブロー関連の関数
-function selectColor(color, element) {
-    if (!gameState.isMyTurn) return;
-    
-    // 選択された色をスロットに設定
-    if (gameState.currentColorSlot < 4) {
-        gameState.selectedColors[gameState.currentColorSlot] = color;
-        updateColorSlots();
-        
-        // 次のスロットに移動
-        gameState.currentColorSlot = Math.min(gameState.currentColorSlot + 1, 3);
-        updateColorSlotHighlight();
-    }
-}
-
-function updateColorSlots() {
-    gameState.selectedColors.forEach((color, index) => {
-        const slot = document.querySelector(`[data-slot="${index}"]`);
-        if (color) {
-            slot.style.backgroundColor = getColorCode(color);
-            slot.classList.add('filled');
-            // 白色の場合は境界線を追加
-            if (color === 'white') {
-                slot.style.border = '3px solid #999';
-            } else {
-                slot.style.border = '3px solid #333';
-            }
-        } else {
-            slot.style.backgroundColor = 'transparent';
-            slot.style.border = '3px dashed #ccc';
-            slot.classList.remove('filled');
-        }
-    });
-    
-    // 4色全て選択されたらボタンを有効化
-    const allSelected = gameState.selectedColors.every(color => color !== null);
-    elements.submitColorsBtn.disabled = !allSelected;
-}
-
-function updateColorSlotHighlight() {
-    document.querySelectorAll('.color-slot').forEach((slot, index) => {
-        if (index === gameState.currentColorSlot) {
-            slot.style.borderColor = '#333';
-            slot.style.borderWidth = '4px';
-        } else {
-            slot.style.borderColor = gameState.selectedColors[index] ? '#333' : '#ccc';
-            slot.style.borderWidth = '3px';
-        }
-    });
-}
-
-function submitColors() {
-    if (!gameState.isMyTurn) return;
-    
-    const allSelected = gameState.selectedColors.every(color => color !== null);
-    if (!allSelected) {
-        alert('4つの色をすべて選択してください');
-        return;
-    }
-    
-    socket.emit('makeMove', { colors: [...gameState.selectedColors] });
-}
-
-function resetColorSelection() {
-    gameState.selectedColors = [null, null, null, null];
-    gameState.currentColorSlot = 0;
-    updateColorSlots();
-    updateColorSlotHighlight();
-    elements.submitColorsBtn.disabled = true;
-}
-
-function getColorCode(colorName) {
-    const colorMap = {
-        red: '#ff4444',
-        blue: '#4444ff',
-        green: '#44ff44',
-        yellow: '#ffff44',
-        pink: '#ff44ff',
-        white: '#ffffff'
-    };
-    return colorMap[colorName] || '#ccc';
-}
-
-function getColorDisplay(colors) {
-    return colors.map(color => `<span style="color: ${getColorCode(color)};">●</span>`).join(' ');
-}
-
-function displayAttempt(data) {
-    const attemptDiv = document.createElement('div');
-    
-    if (gameState.currentGameType === 'numberguess') {
-        attemptDiv.className = 'attempt-item';
-        
-        let resultClass = '';
-        if (data.result === '正解！') resultClass = 'correct';
-        else if (data.result === '大きい') resultClass = 'high';
-        else if (data.result === '小さい') resultClass = 'low';
-        
-        attemptDiv.innerHTML = `
-            <div>
-                <div class="attempt-player">${data.player}</div>
-                <div class="attempt-guess">${data.guess}</div>
-            </div>
-            <div class="attempt-result ${resultClass}">${data.result}</div>
-        `;
-    } else if (gameState.currentGameType === 'hitandblow') {
-        attemptDiv.className = 'hit-blow-attempt';
-        
-        const colorsHtml = data.guess.map(color => 
-            `<div class="attempt-color" style="background-color: ${getColorCode(color)}; ${color === 'white' ? 'border: 2px solid #999;' : ''}"></div>`
-        ).join('');
-        
-        attemptDiv.innerHTML = `
-            <div>
-                <div class="attempt-player">${data.player}</div>
-                <div class="attempt-colors">${colorsHtml}</div>
-            </div>
-            <div class="attempt-result-hb">
-                <div class="hit-count">Hit: ${data.hit}</div>
-                <div class="blow-count">Blow: ${data.blow}</div>
-            </div>
-        `;
-    }
-    
-    elements.attemptsList.appendChild(attemptDiv);
-    elements.attemptsList.scrollTop = elements.attemptsList.scrollHeight;
-}
-
-function sendChatMessage() {
-    const message = elements.chatInput.value.trim();
-    if (message) {
-        socket.emit('chatMessage', { message: message });
-        elements.chatInput.value = '';
-    }
-}
-
-function displayChatMessage(data) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'chat-message';
-    messageDiv.innerHTML = `
-        <div class="chat-message-header">${data.player} - ${data.timestamp}</div>
-        <div class="chat-message-content">${data.message}</div>
-    `;
-    
-    elements.chatMessages.appendChild(messageDiv);
-    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-}
+//     elements.chatMessages.appendChild(messageDiv);
+//     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+// }
 
 function resetToGameSelection() {
-    gameState = {
+    gameState = { // Keep properties not managed by Alpine, or essential for server state tracking
         currentRoom: null,
-        playerId: socket.id,
-        isMyTurn: false,
-        players: [],
-        currentGameType: null,
-        selectedColors: [null, null, null, null],
-        currentColorSlot: 0
+        playerId: socket.id, // This needs to be consistent
+        players: [], // Authoritative list from server
+        // isMyTurn: false, // Managed by Alpine.store('gameScreen').isMyTurn
+        // currentGameType: null, // Managed by Alpine.store('gameScreen').currentGameType
+        // selectedColors: [null, null, null, null], // Managed by Alpine.store('hitAndBlow').selectedColors
+        // currentColorSlot: 0 // Managed by Alpine.store('hitAndBlow').currentColorSlot
     };
     
-    elements.readyBtn.disabled = false;
-    elements.readyBtn.textContent = '準備完了';
-    elements.chatMessages.innerHTML = '';
-    resetColorSelection();
+    if (Alpine.store('gameWaiting')) {
+        Alpine.store('gameWaiting').isReady = false;
+        Alpine.store('gameWaiting').readyButtonText = '準備完了';
+        Alpine.store('gameWaiting').players = []; // Clear players on reset
+        Alpine.store('gameWaiting').playerId = socket.id; // Ensure playerId is current
+    }
+    // elements.readyBtn.disabled = false; // Replaced by Alpine state
+    // elements.readyBtn.textContent = '準備完了'; // Replaced by Alpine state
+    // elements.chatMessages.innerHTML = ''; // Replaced by chat store reset
+    if(Alpine.store('chat')) {
+        Alpine.store('chat').messages = [];
+        Alpine.store('chat').currentMessage = '';
+    }
+    // resetColorSelection(); // Replaced by specific store resets
+    if (Alpine.store('hitAndBlow')) { // Ensure store exists before resetting
+        resetHitAndBlowAlpineState();
+    }
+    if (Alpine.store('numberGuess')) {
+        Alpine.store('numberGuess').guess = '';
+        Alpine.store('numberGuess').history = [];
+    }
+    // Reset gameEnd store if needed, though it's mostly set on game end
+    if (Alpine.store('gameEnd')) {
+        Alpine.store('gameEnd').resultHTML = '';
+        Alpine.store('gameEnd').resultClass = '';
+    }
     
     showScreen('gameSelection');
 }
 
 // 初期化
+// Moved getColorCode to be global
+
 document.addEventListener('DOMContentLoaded', () => {
+    Alpine.store('matchmaking', {
+        title: '対戦相手を探しています',
+        gameIcon: '',
+        gameTitle: '',
+        gameDescription: '',
+        waitingText: '対戦相手を待っています... ⏳'
+    });
+
+    Alpine.store('gameWaiting', {
+        players: [],
+        isReady: false,
+        readyButtonText: '準備完了',
+        playerId: null // Will be set on connect
+    });
+
+    Alpine.store('gameScreen', {
+        currentGameType: null,
+        isMyTurn: false,
+        gameStatusText: '',
+        attemptsInfoText: '',
+        gameStatusClass: 'opponent-turn' // Default class
+    });
+
+    Alpine.store('numberGuess', {
+        guess: '',
+        history: []
+    });
+
+    Alpine.store('hitAndBlow', {
+        selectedColors: [null, null, null, null],
+        currentColorSlot: 0,
+        history: []
+    });
+
+    Alpine.store('chat', {
+        messages: [],
+        currentMessage: ''
+    });
+
+    Alpine.store('gameEnd', {
+        resultHTML: '',
+        resultClass: ''
+    });
+
+    Alpine.store('modals', {
+        showDisconnectNotice: false
+    });
+
+    Alpine.effect(() => {
+        const ngHistory = Alpine.store('numberGuess').history;
+        if (Alpine.store('gameScreen').currentGameType === 'numberguess' && ngHistory.length > 0) {
+            setTimeout(() => {
+                const listEl = document.getElementById('attemptsList');
+                if (listEl) listEl.scrollTop = listEl.scrollHeight;
+            }, 0);
+        }
+
+        const hbHistory = Alpine.store('hitAndBlow').history;
+        if (Alpine.store('gameScreen').currentGameType === 'hitandblow' && hbHistory.length > 0) {
+            setTimeout(() => {
+                const listEl = document.getElementById('attemptsList');
+                if (listEl) listEl.scrollTop = listEl.scrollHeight;
+            }, 0);
+        }
+
+        const chatMessages = Alpine.store('chat').messages;
+        if (chatMessages.length > 0) {
+            setTimeout(() => {
+                const chatEl = document.getElementById('chatMessages');
+                if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+            },0);
+        }
+    });
+
     showScreen('gameSelection');
-    resetColorSelection();
+    // resetColorSelection(); // Replaced by store initializations
 });
