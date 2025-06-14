@@ -1115,3 +1115,74 @@ header p {
     font-weight: bold;
     border: 3px solid #4CAF50;
 }
+
+/* 攻撃済みクリーチャーのスタイル */
+.card.attacked {
+    opacity: 0.6;
+    filter: grayscale(30%);
+    cursor: not-allowed !important;
+}
+
+.card.attacked::after {
+    content: "⚔️";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+
+/* カードレイアウトの改善 */
+.card-content {
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: auto;
+}
+
+.card-emoji {
+    font-size: 2rem;
+    margin-bottom: 4px;
+}
+
+.creature-emoji {
+    font-size: 2.5rem;
+    margin-bottom: 4px;
+}
+
+.card-type-indicator {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.card-description {
+    font-size: 0.65rem;
+    color: #888;
+    font-style: italic;
+}
+
+
+/* 攻撃済みクリーチャーのスタイル */
+.card.attacked {
+    opacity: 0.6;
+    filter: grayscale(50%);
+    border: 2px solid #999;
+}
+
+.card.attacked:hover {
+    transform: none;
+    cursor: not-allowed;
+}

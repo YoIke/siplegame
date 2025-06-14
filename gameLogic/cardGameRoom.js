@@ -328,7 +328,8 @@ class CardGameRoom extends BaseGameRoom {
         shield: state.shield,
         handCount: state.hand.length,
         field: state.field,
-        mana: state.mana
+        mana: state.mana,
+        attackedThisTurn: state.attackedThisTurn // 攻撃済みリストを追加
       })),
       currentPlayer: this.currentPlayerIndex,
       deckCount: this.deck.length

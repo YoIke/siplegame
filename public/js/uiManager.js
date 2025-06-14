@@ -133,8 +133,11 @@ class UIManager {
         let resultClass = '';
         
         if (data.winner) {
-            const isWinner = gameState.players.find(p => p.id === gameState.playerId && p.name === data.winner);
-            if (isWinner) {
+            // 自分のプレイヤー名を取得
+            const myPlayerName = gameState.getMyPlayerName();
+            console.log('Game result check:', { winner: data.winner, myPlayerName: myPlayerName, gameState: gameState });
+            
+            if (data.winner === myPlayerName) {
                 resultHtml = this.getWinnerResultHtml(data);
                 resultClass = 'winner';
             } else {

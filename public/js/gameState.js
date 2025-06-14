@@ -80,6 +80,11 @@ class GameState {
     getCurrentPlayer() {
         return this.players.find(p => p.id === this.playerId);
     }
+
+    getMyPlayerName() {
+        const myPlayer = this.getCurrentPlayer();
+        return myPlayer ? myPlayer.name : this.playerDisplayName;
+    }
 }
 
 // グローバルなゲーム状態インスタンス

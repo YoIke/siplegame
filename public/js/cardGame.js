@@ -5,6 +5,7 @@ class CardGame {
     this.selectedCard = null;
     this.selectedTarget = null;
     this.myIndex = null;
+    this.isProcessing = false; // 処理中フラグを追加
     
     this.initializeEventHandlers();
   }
@@ -91,19 +92,34 @@ class CardGame {
     const fieldElement = document.getElementById(`${player}Field`);
     fieldElement.innerHTML = '';
     
+    console.log(`Updating ${player} field with ${field.length} creatures`);
+    
     field.forEach((card, index) => {
       const cardElement = this.createCardElement(card, player === 'player', index);
       fieldElement.appendChild(cardElement);
+      console.log(`Added ${player} creature:`, card.name, 'index:', index, 'isPlayer:', player === 'player', 'isMyTurn:', this.isMyTurn());
     });
+    
+    // フィールド更新後、自分のクリーチャーのクリック可能状態を再確認
+    if (player === 'player') {
+      console.log('Updated my field, checking clickable state...');
+      document.querySelectorAll('#playerField .field-card').forEach((cardEl, idx) => {
+        const isClickable = cardEl.style.cursor === 'pointer';
+        console.log(`Creature ${idx}: clickable=${isClickable}, hasEventListener=${cardEl.onclick !== null}`);
+      });
+    }
   }
 
   updateHand(hand) {
     const handElement = document.getElementById('playerHand');
     handElement.innerHTML = '';
     
+    console.log(`Updating hand with ${hand.length} cards`);
+    
     hand.forEach((card, index) => {
       const cardElement = this.createHandCardElement(card, index);
       handElement.appendChild(cardElement);
+      console.log(`Added hand card:`, card.name, 'index:', index, 'playable:', this.canPlayCard(card));
     });
   }
 
@@ -111,28 +127,60 @@ class CardGame {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'card field-card';
     cardDiv.dataset.index = index;
+    cardDiv.dataset.uniqueId = card.uniqueId; // ユニークIDを保存
     
     if (isPlayer && !this.isMyTurn()) {
       cardDiv.classList.add('inactive');
     }
     
+    // 攻撃済みかどうかチェック
+    const hasAttacked = this.hasCreatureAttacked(card.uniqueId);
+    if (hasAttacked) {
+      cardDiv.classList.add('attacked');
+      cardDiv.title = 'このクリーチャーは既に攻撃済みです';
+    }
+    
+    // クリーチャーの絵文字を取得
+    const creatureEmoji = this.getCreatureEmoji(card.name);
+    
     cardDiv.innerHTML = `
       <div class="card-header">
-        <span class="card-name">${card.name}</span>
-      </div>
-      <div class="card-stats">
         <span class="attack">⚔️${card.attack}</span>
         <span class="health">❤️${card.currentHealth}</span>
       </div>
+      <div class="card-content">
+        <div class="creature-emoji">${creatureEmoji}</div>
+        <div class="card-type-indicator">🧬</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-cost">💎${card.cost}</span>
+      </div>
     `;
     
-    if (isPlayer && this.isMyTurn()) {
-      cardDiv.addEventListener('click', () => {
+    // 自分のクリーチャーで自分のターンで未攻撃の場合のみクリック可能
+    if (isPlayer && this.isMyTurn() && !hasAttacked) {
+      cardDiv.style.cursor = 'pointer';
+      cardDiv.title = 'クリックして攻撃';
+      
+      cardDiv.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('My creature clicked for attack, index:', index, 'uniqueId:', card.uniqueId);
         this.selectFieldCard(index);
       });
+    } else if (hasAttacked) {
+      cardDiv.style.cursor = 'not-allowed';
     }
     
     return cardDiv;
+  }
+
+  // 攻撃済みかどうかチェック
+  hasCreatureAttacked(uniqueId) {
+    if (!this.gameState || !this.gameState.players) return false;
+    const myPlayer = this.gameState.players[this.myIndex];
+    // サーバーから攻撃済みリストが送られてくる場合
+    return myPlayer.attackedThisTurn && myPlayer.attackedThisTurn.includes(uniqueId);
   }
 
   createHandCardElement(card, index) {
@@ -145,27 +193,71 @@ class CardGame {
       cardDiv.classList.add('unplayable');
     }
     
+    // カードの絵文字と種別アイコンを取得
+    let contentEmoji = '';
+    let typeIcon = '';
+    let statsHtml = '';
+    
+    if (card.type === 'creature') {
+      contentEmoji = this.getCreatureEmoji(card.name);
+      typeIcon = '🧬'; // クリーチャー
+      statsHtml = `
+        <span class="attack">⚔️${card.attack}</span>
+        <span class="health">❤️${card.health}</span>
+      `;
+    } else if (card.type === 'spell') {
+      contentEmoji = this.getSpellEmoji(card);
+      typeIcon = '✨'; // 魔法
+      statsHtml = '';
+    }
+    
     cardDiv.innerHTML = `
       <div class="card-header">
-        <span class="card-cost">💎${card.cost}</span>
-        <span class="card-name">${card.name}</span>
+        ${statsHtml}
       </div>
       <div class="card-content">
-        ${this.getCardDescription(card)}
+        <div class="card-emoji">${contentEmoji}</div>
+        <div class="card-type-indicator">${typeIcon}</div>
+        <div class="card-description">${this.getCardDescription(card)}</div>
       </div>
-      <div class="card-stats">
-        ${card.attack !== undefined ? `<span class="attack">⚔️${card.attack}</span>` : ''}
-        ${card.health !== undefined ? `<span class="health">❤️${card.health}</span>` : ''}
+      <div class="card-footer">
+        <span class="card-cost">💎${card.cost}</span>
       </div>
     `;
     
+    // プレイ可能で自分のターンの場合のみクリック可能
     if (canPlay && this.isMyTurn()) {
-      cardDiv.addEventListener('click', () => {
+      cardDiv.style.cursor = 'pointer';
+      cardDiv.title = 'クリックしてプレイ';
+      
+      cardDiv.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Hand card clicked:', card.name, 'index:', index);
         this.selectHandCard(index);
       });
     }
     
     return cardDiv;
+  }
+
+  getCreatureEmoji(creatureName) {
+    const emojiMap = {
+      'ゴブリン': '👹',
+      'オーク': '🧌',
+      'ナイト': '🛡️',
+      'ウィザード': '🧙‍♂️',
+      'ドラゴン': '🐉'
+    };
+    return emojiMap[creatureName] || '🦄';
+  }
+
+  getSpellEmoji(card) {
+    if (card.damage) return '🔥'; // ダメージ系
+    if (card.heal) return '💚'; // 回復系
+    if (card.shield) return '🛡️'; // シールド系
+    if (card.attackBoost) return '⚡'; // パワーアップ系
+    return '✨'; // その他の魔法
   }
 
   getCardDescription(card) {
@@ -177,7 +269,7 @@ class CardGame {
       if (card.attackBoost) desc += `攻撃力+${card.attackBoost}`;
       return desc;
     }
-    return card.type === 'creature' ? 'クリーチャー' : '';
+    return ''; // クリーチャーの場合は説明文なし（絵文字で表現）
   }
 
   canPlayCard(card) {
@@ -187,7 +279,14 @@ class CardGame {
   }
 
   isMyTurn() {
-    return this.gameState && this.gameState.currentPlayer === this.myIndex;
+    const result = this.gameState && this.gameState.currentPlayer === this.myIndex;
+    console.log('isMyTurn check:', {
+      hasGameState: !!this.gameState,
+      currentPlayer: this.gameState?.currentPlayer,
+      myIndex: this.myIndex,
+      result: result
+    });
+    return result;
   }
 
   selectHandCard(index) {
@@ -200,8 +299,13 @@ class CardGame {
     
     // 新しいカードを選択
     const cardElement = document.querySelector(`.hand-card[data-index="${index}"]`);
-    cardElement.classList.add('selected');
-    this.selectedCard = index;
+    if (cardElement) {
+      cardElement.classList.add('selected');
+      this.selectedCard = index;
+    } else {
+      console.error('Could not find card element with index:', index);
+      return;
+    }
     
     const card = this.gameState.myHand[index];
     console.log('Selected card:', card);
@@ -218,29 +322,56 @@ class CardGame {
       } else {
         console.log('Non-target spell selected, playing immediately');
         // 回復やシールドは即座に発動
-        this.playSelectedCard();
+        this.executePlayCard();
       }
     } else {
       console.log('Creature selected, playing immediately');
       // クリーチャーは即座に召喚
-      this.playSelectedCard();
+      this.executePlayCard();
     }
   }
 
   selectFieldCard(index) {
-    // 場のカードを選択（攻撃用）
+    console.log('selectFieldCard called with index:', index);
+    
+    // クリーチャー選択時は処理中フラグをチェックしない（ターゲット選択の準備段階）
+    
+    if (!this.gameState || !this.gameState.players) {
+      console.error('Game state not available');
+      return;
+    }
+    
+    const myPlayer = this.gameState.players[this.myIndex];
+    if (index >= myPlayer.field.length) {
+      console.error('Invalid creature index:', index);
+      return;
+    }
+    
+    const creature = myPlayer.field[index];
+    
+    // 攻撃済みチェック
+    if (this.hasCreatureAttacked(creature.uniqueId)) {
+      console.log('Creature already attacked this turn:', creature.name);
+      this.showMessage('そのクリーチャーは既に攻撃済みです', 'error');
+      return;
+    }
+    
+    // 既に別のクリーチャーが選択されている場合は選択解除
     document.querySelectorAll('.field-card.selected').forEach(card => {
       card.classList.remove('selected');
     });
     
+    // 新しいクリーチャーを選択
     const cardElement = document.querySelector(`#playerField .field-card[data-index="${index}"]`);
-    cardElement.classList.add('selected');
-    
-    this.showAttackTargets(index);
+    if (cardElement) {
+      cardElement.classList.add('selected');
+      console.log('Selected creature for attack:', creature.name, 'index:', index);
+      this.showAttackTargets(index);
+    }
   }
 
-  showTargetSelection() {
-    console.log('showTargetSelection called');
+  showTargetSelection(targetType = 'enemy') {
+    console.log('showTargetSelection called with type:', targetType);
     
     // 既存のターゲット選択だけをクリア（カード選択は保持）
     document.querySelectorAll('.targetable').forEach(el => {
@@ -253,7 +384,7 @@ class CardGame {
     
     const card = this.gameState.myHand[this.selectedCard];
     
-    if (card.attackBoost) {
+    if (targetType === 'friendly' && card.attackBoost) {
       // パワーアップ系は自分のクリーチャーをターゲット
       const myCreatures = document.querySelectorAll('#playerField .field-card');
       console.log('Found my creatures for power up:', myCreatures.length);
@@ -292,28 +423,40 @@ class CardGame {
     }
     
     // 一度だけイベントリスナーを設定
-    this.setupSpellEventListeners();
+    this.setupSpellEventListeners(targetType);
   }
 
-  setupSpellEventListeners() {
-    console.log('setupSpellEventListeners called');
+  setupSpellEventListeners(targetType = 'enemy') {
+    console.log('setupSpellEventListeners called with type:', targetType);
     
     // 少し待ってからイベントリスナーを設定
     setTimeout(() => {
       const card = this.gameState.myHand[this.selectedCard];
       
-      if (card.attackBoost) {
+      if (targetType === 'friendly' && card.attackBoost) {
         // パワーアップ系：自分のクリーチャーにイベントリスナー
         const targetableMyCreatures = document.querySelectorAll('#playerField .field-card.targetable[data-spell-handler="true"]');
         console.log('Targetable my creatures for power up:', targetableMyCreatures.length);
         
         targetableMyCreatures.forEach(creatureCard => {
           const powerUpHandler = (e) => {
-            console.log('Power up creature clicked, index:', creatureCard.dataset.index);
+            e.preventDefault();
             e.stopPropagation();
-            this.selectSpellTarget('myCreature', parseInt(creatureCard.dataset.index));
+            e.stopImmediatePropagation();
+            
+            if (this.isProcessing) {
+              console.log('Spell already processing, ignoring');
+              return;
+            }
+            
+            console.log('Power up creature clicked, index:', creatureCard.dataset.index);
+            this.isProcessing = true;
+            this.executeSpellTarget('myCreature', parseInt(creatureCard.dataset.index));
           };
-          creatureCard.addEventListener('click', powerUpHandler, { once: true });
+          creatureCard.addEventListener('click', powerUpHandler, { 
+            once: true,
+            capture: true
+          });
           console.log('Added power up event listener to my creature:', creatureCard.dataset.index);
         });
       } else {
@@ -323,11 +466,23 @@ class CardGame {
         
         if (opponentHealthArea) {
           const spellPlayerHandler = (e) => {
-            console.log('Spell player attack clicked');
+            e.preventDefault();
             e.stopPropagation();
-            this.selectSpellTarget('player', null);
+            e.stopImmediatePropagation();
+            
+            if (this.isProcessing) {
+              console.log('Spell already processing, ignoring');
+              return;
+            }
+            
+            console.log('Spell player attack clicked');
+            this.isProcessing = true;
+            this.executeSpellTarget('player', null);
           };
-          opponentHealthArea.addEventListener('click', spellPlayerHandler, { once: true });
+          opponentHealthArea.addEventListener('click', spellPlayerHandler, { 
+            once: true,
+            capture: true
+          });
           console.log('Added spell player event listener');
         }
         
@@ -337,11 +492,23 @@ class CardGame {
         
         targetableCreatures.forEach(card => {
           const spellCreatureHandler = (e) => {
-            console.log('Spell creature attack clicked, index:', card.dataset.index);
+            e.preventDefault();
             e.stopPropagation();
-            this.selectSpellTarget('creature', parseInt(card.dataset.index));
+            e.stopImmediatePropagation();
+            
+            if (this.isProcessing) {
+              console.log('Spell already processing, ignoring');
+              return;
+            }
+            
+            console.log('Spell creature attack clicked, index:', card.dataset.index);
+            this.isProcessing = true;
+            this.executeSpellTarget('creature', parseInt(card.dataset.index));
           };
-          card.addEventListener('click', spellCreatureHandler, { once: true });
+          card.addEventListener('click', spellCreatureHandler, { 
+            once: true,
+            capture: true
+          });
           console.log('Added spell creature event listener to card:', card.dataset.index);
         });
       }
@@ -391,29 +558,53 @@ class CardGame {
       const opponentHealthArea = document.querySelector('.health-bar.targetable[data-attack-handler="true"]');
       if (opponentHealthArea) {
         const attackPlayerHandler = (e) => {
-          console.log('Attack player clicked');
+          e.preventDefault();
           e.stopPropagation();
-          this.attack(attackerIndex, 'player', null);
+          e.stopImmediatePropagation(); // 他のイベントリスナーも停止
+          
+          if (this.isProcessing) {
+            console.log('Attack already processing, ignoring');
+            return;
+          }
+          
+          console.log('Attack player clicked');
+          this.isProcessing = true; // 処理開始
+          this.executeAttack(attackerIndex, 'player', null);
         };
-        opponentHealthArea.addEventListener('click', attackPlayerHandler, { once: true });
+        opponentHealthArea.addEventListener('click', attackPlayerHandler, { 
+          once: true,
+          capture: true // キャプチャフェーズで処理
+        });
         console.log('Added attack player event listener');
       }
       
       // クリーチャー攻撃
       document.querySelectorAll('#opponentField .field-card.targetable[data-attack-handler="true"]').forEach(card => {
         const attackCreatureHandler = (e) => {
-          console.log('Attack creature clicked, index:', card.dataset.index);
+          e.preventDefault();
           e.stopPropagation();
-          this.attack(attackerIndex, 'creature', parseInt(card.dataset.index));
+          e.stopImmediatePropagation();
+          
+          if (this.isProcessing) {
+            console.log('Attack already processing, ignoring');
+            return;
+          }
+          
+          console.log('Attack creature clicked, index:', card.dataset.index);
+          this.isProcessing = true; // 処理開始
+          this.executeAttack(attackerIndex, 'creature', parseInt(card.dataset.index));
         };
-        card.addEventListener('click', attackCreatureHandler, { once: true });
+        card.addEventListener('click', attackCreatureHandler, { 
+          once: true,
+          capture: true
+        });
         console.log('Added attack creature event listener to card:', card.dataset.index);
       });
     }, 50); // 50ms後に設定
   }
 
-  selectSpellTarget(type, index) {
-    console.log('selectSpellTarget called:', type, index);
+  executeSpellTarget(type, index) {
+    console.log('executeSpellTarget called:', type, index);
     let target = null;
     
     if (type === 'player') {
@@ -424,11 +615,16 @@ class CardGame {
       target = { type: 'creature', player: this.myIndex, index: index }; // 自分のクリーチャー
     }
     
-    this.playSelectedCard(target);
+    this.executePlayCard(target);
   }
 
-  playSelectedCard(target = null) {
-    if (this.selectedCard === null) return;
+  executePlayCard(target = null) {
+    if (this.selectedCard === null) {
+      console.error('No card selected');
+      return;
+    }
+    
+    console.log('executePlayCard called with target:', target);
     
     const moveData = {
       action: 'playCard',
@@ -436,13 +632,33 @@ class CardGame {
       target: target
     };
     
+    console.log('Sending play card move:', moveData);
+    
     if (window.app && window.app.socketManager) {
       window.app.socketManager.sendMove(moveData);
     }
     this.clearSelections();
   }
 
-  attack(attackerIndex, targetType, targetIndex) {
+  // 後方互換性のため残しておく
+  selectSpellTarget(type, index) {
+    this.executeSpellTarget(type, index);
+  }
+
+  playSelectedCard(target = null) {
+    // 処理中フラグチェック（互換性のため）
+    if (this.isProcessing) {
+      console.log('Already processing, ignoring playSelectedCard');
+      return;
+    }
+    
+    this.isProcessing = true;
+    this.executePlayCard(target);
+  }
+
+  executeAttack(attackerIndex, targetType, targetIndex) {
+    console.log('executeAttack called:', attackerIndex, targetType, targetIndex);
+    
     const target = targetType === 'player' ? null : { type: 'creature', player: 1 - this.myIndex, index: targetIndex };
     
     const moveData = {
@@ -451,10 +667,17 @@ class CardGame {
       target: target
     };
     
+    console.log('Sending attack move:', moveData);
+    
     if (window.app && window.app.socketManager) {
       window.app.socketManager.sendMove(moveData);
     }
     this.clearSelections();
+  }
+
+  attack(attackerIndex, targetType, targetIndex) {
+    // 後方互換性のため残しておく
+    this.executeAttack(attackerIndex, targetType, targetIndex);
   }
 
   endTurn() {
@@ -471,19 +694,29 @@ class CardGame {
   clearSelections() {
     this.selectedCard = null;
     this.selectedTarget = null;
+    this.isProcessing = false; // 処理フラグをリセット
     
-    document.querySelectorAll('.selected').forEach(el => {
+    // 手札の選択状態をクリア
+    document.querySelectorAll('.hand-card.selected').forEach(el => {
       el.classList.remove('selected');
     });
     
+    // 場のクリーチャーの選択状態もクリア（攻撃後）
+    document.querySelectorAll('.field-card.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // ターゲット選択状態のみクリア
     document.querySelectorAll('.targetable').forEach(el => {
       el.classList.remove('targetable');
-      el.style.cursor = '';
-      el.title = '';
-      // データ属性もクリア
+      el.style.cursor = el.classList.contains('field-card') && el.closest('#playerField') && this.isMyTurn() ? 'pointer' : '';
+      el.title = el.classList.contains('field-card') && el.closest('#playerField') && this.isMyTurn() ? 'クリックして攻撃' : '';
+      // データ属性をクリア
       delete el.dataset.attackHandler;
       delete el.dataset.spellHandler;
     });
+    
+    console.log('Cleared selections, restored creature clickability');
   }
 
   updateTurnDisplay(currentPlayer) {
@@ -507,6 +740,7 @@ class CardGame {
 
   handleMoveResult(result) {
     console.log('カードゲーム結果:', result);
+    this.isProcessing = false; // 処理完了
     
     if (result.winner) {
       // 即座にゲーム終了
@@ -525,6 +759,7 @@ class CardGame {
 
   handleMoveError(error) {
     console.log('カードゲームエラー:', error);
+    this.isProcessing = false; // エラー時も処理完了
     this.showMessage(error.error || 'エラーが発生しました', 'error');
   }
 
