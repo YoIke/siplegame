@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デバッグ版 - 1対1ミニゲーム対戦</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            max-width: 300px;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .warning { color: #ffd43b; }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <div id="debugLog">初期化中...</div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🎮 1対1ミニゲーム対戦 (デバッグ版)</h1>
+            <p>リアルタイム対戦ゲームを楽しもう！</p>
+        </header>
+
+        <!-- 接続状態 -->
+        <div id="connectionStatus" class="status-bar">
+            接続中...
+        </div>
+
+        <!-- ゲーム選択画面 -->
+        <div id="gameSelection" class="screen">
+            <h2>ゲームを選択してください</h2>
+            <div class="game-grid">
+                <div class="game-card" data-game="numberguess">
+                    <div class="game-icon">🎯</div>
+                    <h3>数字当てゲーム</h3>
+                    <p>1〜100の数字を当てよう！<br>「大きい」「小さい」のヒントで推理</p>
+                    <button class="btn primary">遊ぶ</button>
+                </div>
+                
+                <div class="game-card" data-game="hitandblow">
+                    <div class="game-icon">🌈</div>
+                    <h3>ヒットアンドブロー</h3>
+                    <p>4つの色の組み合わせを当てよう！<br>Hit&Blowで推理</p>
+                    <button class="btn primary">遊ぶ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- その他の画面は省略（デバッグ用） -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const debugLog = document.getElementById('debugLog');
+        
+        function addDebugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            debugLog.appendChild(logEntry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+            
+            // 最大20行まで保持
+            if (debugLog.children.length > 20) {
+                debugLog.removeChild(debugLog.firstChild);
+            }
+        }
+
+        // デバッグログの初期化
+        addDebugLog('ページロード完了', 'success');
+
+        // Socket.io接続テスト（従来方式）
+        try {
+            addDebugLog('Socket.io接続開始');
+            const socket = io();
+            
+            socket.on('connect', () => {
+                addDebugLog('Socket.io接続成功！', 'success');
+                document.getElementById('connectionStatus').textContent = '接続済み';
+                document.getElementById('connectionStatus').className = 'status-bar connected';
+            });
+
+            socket.on('disconnect', () => {
+                addDebugLog('Socket.io切断', 'warning');
+                document.getElementById('connectionStatus').textContent = '切断されました';
+                document.getElementById('connectionStatus').className = 'status-bar disconnected';
+            });
+
+            socket.on('connect_error', (error) => {
+                addDebugLog(`接続エラー: ${error.message}`, 'error');
+            });
+
+            // モジュールローディングテスト
+            addDebugLog('ES6モジュールテスト開始');
+            
+            // ES6モジュールのテスト
+            import('./js/main.js')
+                .then((module) => {
+                    addDebugLog('ES6モジュール読み込み成功', 'success');
+                    // 新しいアプリケーションを初期化
+                    new module.GameApp();
+                    addDebugLog('GameAppインスタンス作成成功', 'success');
+                })
+                .catch((error) => {
+                    addDebugLog(`モジュール読み込みエラー: ${error.message}`, 'error');
+                    addDebugLog('従来のJavaScriptに切り替えます', 'warning');
+                    
+                    // フォールバック: 基本的な機能のみ
+                    document.querySelectorAll('.game-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            const gameType = card.dataset.game;
+                            addDebugLog(`ゲーム選択: ${gameType}`, 'success');
+                            alert(`${gameType}が選択されました（基本モード）`);
+                        });
+                    });
+                });
+
+        } catch (error) {
+            addDebugLog(`初期化エラー: ${error.message}`, 'error');
+        }
+    </script>
+</body>
+</html>
