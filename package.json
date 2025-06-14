@@ -1,7 +1,7 @@
 {
-  "name": "game-demo",
-  "version": "1.0.0",
-  "description": "1対1リアルタイム対戦ゲーム",
+  "name": "siplegame",
+  "version": "2.0.0",
+  "description": "1対1ミニゲーム対戦プラットフォーム - 数字当て & ヒットアンドブロー",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

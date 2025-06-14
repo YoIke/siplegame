@@ -12,19 +12,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ゲームの状態管理
 const gameRooms = new Map();
-const waitingPlayers = [];
+const waitingPlayers = new Map(); // ゲームタイプ別の待機プレイヤー
 
-// ゲームルームクラス
-class GameRoom {
-  constructor(roomId) {
+// ベースゲームルームクラス
+class BaseGameRoom {
+  constructor(roomId, gameType) {
     this.roomId = roomId;
+    this.gameType = gameType;
     this.players = [];
     this.gameState = 'waiting'; // waiting, playing, finished
     this.currentPlayerIndex = 0;
-    this.targetNumber = Math.floor(Math.random() * 100) + 1; // 1-100の数字
-    this.attempts = [];
     this.chatMessages = [];
-    this.maxAttempts = 10;
   }
 
   addPlayer(socket) {
@@ -53,19 +51,52 @@ class GameRoom {
     if (this.players.length === 2 && this.players.every(p => p.ready)) {
       this.gameState = 'playing';
       this.currentPlayerIndex = 0;
-      this.targetNumber = Math.floor(Math.random() * 100) + 1;
-      this.attempts = [];
+      this.initializeGame();
       return true;
     }
     return false;
   }
 
-  makeGuess(playerId, guess) {
+  addChatMessage(playerId, message) {
+    const player = this.players.find(p => p.id === playerId);
+    if (player) {
+      const chatMessage = {
+        player: player.name,
+        message: message,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      this.chatMessages.push(chatMessage);
+      return chatMessage;
+    }
+    return null;
+  }
+
+  // 継承先で実装する抽象メソッド
+  initializeGame() { throw new Error('Must implement initializeGame'); }
+  makeMove(playerId, moveData) { throw new Error('Must implement makeMove'); }
+}
+
+// 数字当てゲームクラス
+class NumberGuessRoom extends BaseGameRoom {
+  constructor(roomId) {
+    super(roomId, 'numberguess');
+    this.targetNumber = Math.floor(Math.random() * 100) + 1;
+    this.attempts = [];
+    this.maxAttempts = 10;
+  }
+
+  initializeGame() {
+    this.targetNumber = Math.floor(Math.random() * 100) + 1;
+    this.attempts = [];
+  }
+
+  makeMove(playerId, moveData) {
     if (this.gameState !== 'playing') return null;
     
     const currentPlayer = this.players[this.currentPlayerIndex];
     if (currentPlayer.id !== playerId) return null;
 
+    const guess = parseInt(moveData.guess);
     const attempt = {
       player: currentPlayer.name,
       guess: guess,
@@ -96,19 +127,103 @@ class GameRoom {
     if (guess < this.targetNumber) return '小さい';
     return '大きい';
   }
+}
 
-  addChatMessage(playerId, message) {
-    const player = this.players.find(p => p.id === playerId);
-    if (player) {
-      const chatMessage = {
-        player: player.name,
-        message: message,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      this.chatMessages.push(chatMessage);
-      return chatMessage;
+// ヒットアンドブローゲームクラス
+class HitAndBlowRoom extends BaseGameRoom {
+  constructor(roomId) {
+    super(roomId, 'hitandblow');
+    this.targetColors = this.generateTargetColors();
+    this.attempts = [];
+    this.maxAttempts = 10;
+    this.colors = ['red', 'blue', 'green', 'yellow', 'pink', 'white'];
+    this.codeLength = 4;
+  }
+
+  initializeGame() {
+    this.targetColors = this.generateTargetColors();
+    this.attempts = [];
+  }
+
+  generateTargetColors() {
+    const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'white'];
+    const target = [];
+    const usedColors = new Set();
+    
+    while (target.length < 4) {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      if (!usedColors.has(randomColor)) {
+        target.push(randomColor);
+        usedColors.add(randomColor);
+      }
     }
-    return null;
+    
+    return target;
+  }
+
+  makeMove(playerId, moveData) {
+    if (this.gameState !== 'playing') return null;
+    
+    const currentPlayer = this.players[this.currentPlayerIndex];
+    if (currentPlayer.id !== playerId) return null;
+
+    const guess = moveData.colors;
+    const result = this.calculateHitAndBlow(guess);
+    
+    const attempt = {
+      player: currentPlayer.name,
+      guess: guess,
+      hit: result.hit,
+      blow: result.blow
+    };
+
+    this.attempts.push(attempt);
+
+    // 正解チェック（全部Hit）
+    if (result.hit === this.codeLength) {
+      this.gameState = 'finished';
+      return { ...attempt, winner: currentPlayer.name, targetColors: this.targetColors };
+    }
+
+    // 最大試行回数チェック
+    if (this.attempts.length >= this.maxAttempts) {
+      this.gameState = 'finished';
+      return { ...attempt, draw: true, targetColors: this.targetColors };
+    }
+
+    // ターン切り替え
+    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % 2;
+    return attempt;
+  }
+
+  calculateHitAndBlow(guess) {
+    let hit = 0;
+    let blow = 0;
+    
+    // Hit（位置と色が一致）をカウント
+    const targetCopy = [...this.targetColors];
+    const guessCopy = [...guess];
+    
+    for (let i = 0; i < this.codeLength; i++) {
+      if (guess[i] === this.targetColors[i]) {
+        hit++;
+        targetCopy[i] = null;
+        guessCopy[i] = null;
+      }
+    }
+    
+    // Blow（色は一致するが位置が違う）をカウント
+    for (let i = 0; i < this.codeLength; i++) {
+      if (guessCopy[i] !== null) {
+        const index = targetCopy.indexOf(guessCopy[i]);
+        if (index !== -1) {
+          blow++;
+          targetCopy[index] = null;
+        }
+      }
+    }
+    
+    return { hit, blow };
   }
 }
 
@@ -116,13 +231,28 @@ class GameRoom {
 io.on('connection', (socket) => {
   console.log('プレイヤーが接続しました:', socket.id);
 
-  // マッチメイキング
-  socket.on('findMatch', () => {
+  // マッチメイキング（ゲームタイプ指定）
+  socket.on('findMatch', (data) => {
+    const gameType = data.gameType || 'numberguess';
+    
+    // 待機中のプレイヤーリストを初期化
+    if (!waitingPlayers.has(gameType)) {
+      waitingPlayers.set(gameType, []);
+    }
+    
+    const waitingList = waitingPlayers.get(gameType);
+    
     // 待機中のプレイヤーがいるかチェック
-    if (waitingPlayers.length > 0) {
-      const opponent = waitingPlayers.pop();
-      const roomId = `room_${Date.now()}`;
-      const gameRoom = new GameRoom(roomId);
+    if (waitingList.length > 0) {
+      const opponent = waitingList.pop();
+      const roomId = `${gameType}_${Date.now()}`;
+      
+      let gameRoom;
+      if (gameType === 'numberguess') {
+        gameRoom = new NumberGuessRoom(roomId);
+      } else if (gameType === 'hitandblow') {
+        gameRoom = new HitAndBlowRoom(roomId);
+      }
       
       // 両プレイヤーをルームに追加
       gameRoom.addPlayer(opponent);
@@ -132,12 +262,13 @@ io.on('connection', (socket) => {
       // マッチング成功を通知
       io.to(roomId).emit('matchFound', {
         roomId: roomId,
+        gameType: gameType,
         players: gameRoom.players.map(p => ({ id: p.id, name: p.name }))
       });
     } else {
       // 待機リストに追加
-      waitingPlayers.push(socket);
-      socket.emit('waitingForOpponent');
+      waitingList.push(socket);
+      socket.emit('waitingForOpponent', { gameType: gameType });
     }
   });
 
@@ -151,11 +282,20 @@ io.on('connection', (socket) => {
         
         // 全プレイヤーが準備完了かチェック
         if (room.startGame()) {
-          io.to(room.roomId).emit('gameStart', {
+          const gameStartData = {
+            gameType: room.gameType,
             currentPlayer: room.players[room.currentPlayerIndex].name,
-            targetRange: '1〜100',
-            maxAttempts: room.maxAttempts
-          });
+            maxAttempts: room.maxAttempts || 10
+          };
+          
+          if (room.gameType === 'numberguess') {
+            gameStartData.targetRange = '1〜100';
+          } else if (room.gameType === 'hitandblow') {
+            gameStartData.colors = room.colors;
+            gameStartData.codeLength = room.codeLength;
+          }
+          
+          io.to(room.roomId).emit('gameStart', gameStartData);
         } else {
           io.to(room.roomId).emit('playerReadyUpdate', {
             players: room.players.map(p => ({ id: p.id, name: p.name, ready: p.ready }))
@@ -165,13 +305,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 数字予想
-  socket.on('makeGuess', (data) => {
+  // ゲーム移動（数字予想 or 色選択）
+  socket.on('makeMove', (data) => {
     const room = findRoomByPlayerId(socket.id);
     if (room) {
-      const result = room.makeGuess(socket.id, parseInt(data.guess));
+      const result = room.makeMove(socket.id, data);
       if (result) {
-        io.to(room.roomId).emit('guessResult', {
+        io.to(room.roomId).emit('moveResult', {
           ...result,
           attempts: room.attempts,
           nextPlayer: room.gameState === 'playing' ? room.players[room.currentPlayerIndex].name : null
@@ -183,7 +323,8 @@ io.on('connection', (socket) => {
             io.to(room.roomId).emit('gameEnd', {
               winner: result.winner || null,
               draw: result.draw || false,
-              targetNumber: result.targetNumber
+              targetNumber: result.targetNumber,
+              targetColors: result.targetColors
             });
           }, 2000);
         }
@@ -217,14 +358,31 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ゲーム選択に戻る
+  socket.on('backToGameSelection', () => {
+    const room = findRoomByPlayerId(socket.id);
+    if (room) {
+      const shouldDeleteRoom = room.removePlayer(socket.id);
+      if (shouldDeleteRoom) {
+        gameRooms.delete(room.roomId);
+      } else {
+        socket.to(room.roomId).emit('opponentDisconnected');
+      }
+    }
+    socket.emit('backToGameSelection');
+  });
+
   // 切断処理
   socket.on('disconnect', () => {
     console.log('プレイヤーが切断しました:', socket.id);
     
     // 待機リストから削除
-    const waitingIndex = waitingPlayers.findIndex(p => p.id === socket.id);
-    if (waitingIndex !== -1) {
-      waitingPlayers.splice(waitingIndex, 1);
+    for (const [gameType, waitingList] of waitingPlayers.entries()) {
+      const index = waitingList.findIndex(p => p.id === socket.id);
+      if (index !== -1) {
+        waitingList.splice(index, 1);
+        break;
+      }
     }
 
     // ゲームルームから削除

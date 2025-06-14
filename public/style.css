@@ -105,19 +105,78 @@ header p {
     box-shadow: none;
 }
 
-/* Matchmaking */
-#matchmaking {
+/* Game Selection */
+#gameSelection {
     text-align: center;
 }
 
-#matchmaking h2 {
+#gameSelection h2 {
     color: #333;
     margin-bottom: 30px;
     font-size: 2rem;
 }
 
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.game-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border: 3px solid transparent;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border-color: #667eea;
+}
+
+.game-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.game-card h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.game-card p {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Matchmaking */
+#matchmaking {
+    text-align: center;
+}
+
+#matchmakingTitle {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.game-preview {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
 #waitingMessage {
-    margin-top: 20px;
+    margin: 20px 0;
     font-size: 1.1rem;
     color: #666;
 }
@@ -494,4 +553,171 @@ header p {
 .guess-form.disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* Hit and Blow Game Styles */
+.color-selection {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.color-selection h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.color-palette {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #ddd;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: #333;
+}
+
+.color-option.selected {
+    border-color: #333;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.selected-colors {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.color-slot {
+    width: 60px;
+    height: 60px;
+    border: 3px dashed #ccc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.color-slot.filled {
+    border-style: solid;
+    border-color: #333;
+}
+
+.color-slot::before {
+    content: attr(data-slot);
+    position: absolute;
+    bottom: -25px;
+    font-size: 12px;
+    color: #666;
+}
+
+#submitColorsBtn {
+    margin-top: 15px;
+}
+
+/* Hit and Blow Attempts */
+.hit-blow-attempt {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.attempt-colors {
+    display: flex;
+    gap: 8px;
+}
+
+.attempt-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #333;
+}
+
+.attempt-result-hb {
+    display: flex;
+    gap: 15px;
+    font-weight: bold;
+}
+
+.hit-count {
+    color: #ff4444;
+}
+
+.blow-count {
+    color: #4444ff;
+}
+
+/* Game Interface Management */
+.game-interface {
+    margin-bottom: 20px;
+}
+
+.game-interface.hidden {
+    display: none;
+}
+
+/* Secondary button style */
+.btn.secondary {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+.btn.secondary:hover {
+    background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+}
+
+/* Responsive updates for new game selection */
+@media (max-width: 768px) {
+    .game-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .game-card {
+        padding: 20px;
+    }
+    
+    .game-icon {
+        font-size: 3rem;
+    }
+    
+    .color-palette {
+        gap: 10px;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .color-slot {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .selected-colors {
+        gap: 8px;
+    }
 }
