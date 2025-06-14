@@ -133,11 +133,18 @@ class UIManager {
         let resultClass = '';
         
         if (data.winner) {
-            // 自分のプレイヤー名を取得
-            const myPlayerName = gameState.getMyPlayerName();
-            console.log('Game result check:', { winner: data.winner, myPlayerName: myPlayerName, gameState: gameState });
+            let isWinner = false;
             
-            if (data.winner === myPlayerName) {
+            // カードゲームの場合はサーバーから送られるisWinnerフラグを使用
+            if (data.isWinner !== undefined) {
+                isWinner = data.isWinner;
+            } else {
+                // 他のゲーム（数字当て、ヒットアンドブロー）の場合は従来の方式
+                const myPlayerName = gameState.getMyPlayerName();
+                isWinner = data.winner === myPlayerName;
+            }
+            
+            if (isWinner) {
                 resultHtml = this.getWinnerResultHtml(data);
                 resultClass = 'winner';
             } else {

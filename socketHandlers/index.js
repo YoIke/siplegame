@@ -315,8 +315,16 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
               // ゲーム終了チェック
               if (room.gameState === 'finished') {
                 setTimeout(() => {
-                  io.to(room.roomId).emit('gameEnd', {
-                    winner: result.winner || null
+                  // 各プレイヤーに個別に勝敗情報を送信
+                  room.players.forEach(player => {
+                    const playerSocket = io.sockets.sockets.get(player.id);
+                    if (playerSocket) {
+                      const isWinner = result.winner === player.name;
+                      playerSocket.emit('gameEnd', {
+                        winner: result.winner,
+                        isWinner: isWinner
+                      });
+                    }
                   });
                 }, 2000);
               }
