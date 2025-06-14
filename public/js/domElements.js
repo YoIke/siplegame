@@ -3,7 +3,12 @@ class DOMElements {
     constructor() {
         this.elements = {
             connectionStatus: document.getElementById('connectionStatus'),
+            passwordEntryScreen: document.getElementById('passwordEntryScreen'),
+            passwordInput: document.getElementById('passwordInput'),
+            submitPasswordBtn: document.getElementById('submitPasswordBtn'),
+            passwordError: document.getElementById('passwordError'),
             gameSelection: document.getElementById('gameSelection'),
+            gameSelectionMessage: document.getElementById('gameSelectionMessage'), // Added this line
             matchmaking: document.getElementById('matchmaking'),
             gameWaiting: document.getElementById('gameWaiting'),
             gameScreen: document.getElementById('gameScreen'),

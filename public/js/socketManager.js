@@ -51,14 +51,22 @@ class SocketManager {
             if (this.gameState) {
                 this.gameState.updateRoom(data.roomId);
                 this.gameState.updatePlayers(data.players);
-                this.gameState.setGameType(data.gameType);
+                // gameType might not be set yet if matching by password
+                if (data.gameType) {
+                    this.gameState.setGameType(data.gameType);
+                    if (this.domElements) {
+                        this.domElements.showScreen('gameWaiting');
+                    }
+                } else {
+                    // Matched by password, waiting for game selection
+                    if (this.domElements) {
+                        this.domElements.showScreen('gameSelection');
+                    }
+                }
             }
             
-            if (this.domElements) {
-                this.domElements.showScreen('gameWaiting');
-            }
             if (this.uiManager) {
-                this.uiManager.updatePlayersInfo();
+                this.uiManager.updatePlayersInfo(); // Useful for showing matched players
             }
         });
 
@@ -120,7 +128,37 @@ class SocketManager {
 
         this.socket.on('backToGameSelection', () => {
             if (this.gameManager) {
-                this.gameManager.resetToGameSelection();
+                this.gameManager.resetToGameSelection(); // This will be updated to handle persistent rooms
+            }
+        });
+
+        this.socket.on('opponentReturnedToSelection', (data) => {
+            console.log('Opponent wants to return to game selection:', data);
+            if (this.domElements && this.uiManager && this.gameState) {
+                this.domElements.showScreen('gameSelection');
+                this.uiManager.updatePlayersInfo(data.players || this.gameState.players); // Update with fresh player data if sent
+                this.uiManager.displayMessageAboveGameCards("対戦相手が新しいゲームを選んでいます...");
+            }
+        });
+
+        this.socket.on('readyForNewGameSelection', (data) => {
+            console.log('Both players ready for new game selection:', data);
+            if (this.gameState && this.domElements && this.uiManager) {
+                this.gameState.setGameType(null); // Clear old game type
+                this.gameState.updatePlayers(data.players); // Update with fresh player data
+                this.domElements.showScreen('gameSelection');
+                this.uiManager.updatePlayersInfo(); // Uses updated gameState
+                this.uiManager.displayMessageAboveGameCards("新しいゲームを選んでください");
+            }
+        });
+
+        this.socket.on('opponentDisconnectedEndMatch', (data) => {
+            console.log('Opponent disconnected, match ended:', data);
+            if (this.domElements && this.uiManager && this.gameState) {
+                this.gameState.reset(); // Full reset as the match is over
+                this.domElements.showScreen('passwordEntryScreen');
+                this.uiManager.displayPasswordError('対戦相手の接続が切れました。あいことば入力に戻ります。');
+                // Consider also showing a modal like 'disconnectNotice' but more specific
             }
         });
     }
@@ -128,6 +166,14 @@ class SocketManager {
     // 送信メソッド
     findMatch(gameType) {
         this.socket.emit('findMatch', { gameType: gameType });
+    }
+
+    matchByPassword(password) {
+        this.socket.emit('matchByPassword', { password: password });
+    }
+
+    selectGame(gameType, roomId) {
+        this.socket.emit('selectGame', { gameType: gameType, roomId: roomId });
     }
 
     playerReady() {

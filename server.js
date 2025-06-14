@@ -15,8 +15,8 @@ const initializeSocketHandlers = require('./socketHandlers'); // Import the hand
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ゲームの状態管理
-const gameRooms = new Map();
-const waitingPlayers = new Map(); // ゲームタイプ別の待機プレイヤー
+const gameRooms = new Map(); // Stores active game room instances
+const waitingPlayers = new Map(); // Stores players waiting by password: password -> { sockets: [], roomId: string, gameType: null | string, playersInfo: [] }
 
 // Initialize Socket.io handlers
 initializeSocketHandlers(io, gameRooms, waitingPlayers, NumberGuessRoom, HitAndBlowRoom);

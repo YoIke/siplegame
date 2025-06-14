@@ -18,9 +18,18 @@
             接続中...
         </div>
 
+        <!-- あいことば入力画面 -->
+        <div id="passwordEntryScreen" class="screen hidden">
+            <h2>あいことば入力</h2>
+            <input type="text" id="passwordInput" placeholder="あいことばを入力">
+            <button id="submitPasswordBtn">マッチング開始</button>
+            <p id="passwordError" class="error-message"></p>
+        </div>
+
         <!-- ゲーム選択画面 -->
         <div id="gameSelection" class="screen">
             <h2>ゲームを選択してください</h2>
+            <p id="gameSelectionMessage" class="text-center"></p>
             <div class="game-grid">
                 <div class="game-card" data-game="numberguess">
                     <div class="game-icon">🎯</div>

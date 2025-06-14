@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('依存関係を設定しました');
         
         // 初期画面の表示
-        domElements.showScreen('gameSelection');
+        domElements.showScreen('passwordEntryScreen');
         
         // ヒットアンドブローの初期化
         hitAndBlowGame.initialize();

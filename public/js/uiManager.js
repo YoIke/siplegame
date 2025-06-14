@@ -187,6 +187,34 @@ class UIManager {
         this.dom.getElement('readyBtn').textContent = '準備完了';
         this.dom.getElement('chatMessages').innerHTML = '';
     }
+
+    // Password related methods
+    getPasswordValue() {
+        return this.dom.getElement('passwordInput').value;
+    }
+
+    displayPasswordError(message) {
+        this.dom.getElement('passwordError').textContent = message;
+    }
+
+    clearPasswordError() {
+        this.dom.getElement('passwordError').textContent = '';
+    }
+
+    showWaitingForPasswordMatch(password) {
+        this.dom.showScreen('matchmaking');
+        this.dom.getElement('matchmakingTitle').textContent = `「${password}」で対戦相手を探しています`;
+        this.dom.getElement('selectedGameInfo').innerHTML = '<p>同じあいことばのプレイヤーを待っています...</p>';
+    }
+
+    displayMessageAboveGameCards(message) {
+        const messageElement = this.dom.getElement('gameSelectionMessage');
+        if (messageElement) {
+            messageElement.textContent = message || ''; // Clear if message is empty or null
+        } else {
+            console.warn('gameSelectionMessage element not found in DOMElements');
+        }
+    }
 }
 
 // UIManagerクラスをエクスポート
