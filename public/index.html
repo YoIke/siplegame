@@ -5,44 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>1対1ミニゲーム対戦</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* ヒットアンドブロー用の追加スタイル */
-        .color-slot.selected {
-            border: 3px solid #ff6b6b !important;
-            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-        }
-        
-        .attempt-colors {
-            display: flex;
-            gap: 4px;
-            margin: 0 10px;
-        }
-        
-        .attempt-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 1px solid #333;
-        }
-        
-        .color-option {
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .color-option:hover {
-            transform: scale(1.1);
-        }
-        
-        .color-option[style*="pointer-events: none"] {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .color-option[style*="pointer-events: none"]:hover {
-            transform: none;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -50,6 +12,7 @@
             <h1>🎮 1対1ミニゲーム対戦</h1>
             <p>リアルタイム対戦ゲームを楽しもう！</p>
         </header>
+
         <!-- 接続状態 -->
         <div id="connectionStatus" class="status-bar">
             接続中...
@@ -93,6 +56,7 @@
             <div id="playersInfo"></div>
             <button id="readyBtn" class="btn primary">準備完了</button>
         </div>
+
         <!-- ゲーム画面 -->
         <div id="gameScreen" class="screen hidden">
             <div class="game-info">
@@ -141,6 +105,7 @@
                         <div id="attemptsList"></div>
                     </div>
                 </div>
+
                 <!-- チャットエリア -->
                 <div class="chat-area">
                     <div class="chat-header">
@@ -175,6 +140,6 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
