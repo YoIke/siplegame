@@ -8,6 +8,7 @@ class GameState {
         this.currentRoom = null;
         this.currentRoomId = null; // 追加: gameManager.jsで使用されているプロパティ
         this.playerId = null;
+        this.playerDisplayName = null; // 追加: プレイヤーの表示名
         this.isMyTurn = false;
         this.players = [];
         this.currentGameType = null;
@@ -18,6 +19,10 @@ class GameState {
 
     setPlayerId(id) {
         this.playerId = id;
+    }
+
+    setPlayerDisplayName(displayName) {
+        this.playerDisplayName = displayName;
     }
 
     updateRoom(roomId) {

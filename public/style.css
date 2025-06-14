@@ -75,7 +75,7 @@ header p {
     margin-bottom: 15px; /* Add some space below the input group */
 }
 
-#passwordInput {
+#passwordInput, #displayNameInput {
     padding: 12px 20px;
     border: 2px solid #ddd;
     border-radius: 25px;
@@ -85,7 +85,7 @@ header p {
     transition: border-color 0.3s ease;
 }
 
-#passwordInput:focus {
+#passwordInput:focus, #displayNameInput:focus {
     outline: none;
     border-color: #667eea;
 }

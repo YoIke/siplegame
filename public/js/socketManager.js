@@ -250,8 +250,8 @@ class SocketManager {
         this.socket.emit('findMatch', { gameType: gameType });
     }
 
-    matchByPassword(password) {
-        this.socket.emit('matchByPassword', { password: password });
+    matchByPassword(password, displayName) {
+        this.socket.emit('matchByPassword', { password: password, displayName: displayName });
     }
 
     selectGame(gameType, roomId) {

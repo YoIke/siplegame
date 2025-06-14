@@ -6,6 +6,7 @@ class DOMElements {
             header: document.querySelector('header'),
             container: document.querySelector('.container'),
             passwordEntryScreen: document.getElementById('passwordEntryScreen'),
+            displayNameInput: document.getElementById('displayNameInput'),
             passwordInput: document.getElementById('passwordInput'),
             submitPasswordBtn: document.getElementById('submitPasswordBtn'),
             passwordError: document.getElementById('passwordError'),

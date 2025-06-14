@@ -44,12 +44,23 @@ class GameManager {
 
     initiatePasswordMatch() {
         this.uiManager.clearPasswordError();
+        const displayName = this.dom.getElement('displayNameInput').value.trim();
         const password = this.uiManager.getPasswordValue();
+        
+        if (!displayName || displayName === '') {
+            this.uiManager.displayPasswordError('表示名を入力してください。');
+            return;
+        }
+        
         if (!password || password.trim() === '') {
             this.uiManager.displayPasswordError('あいことばを入力してください。');
             return;
         }
-        this.socketManager.matchByPassword(password);
+        
+        // ゲーム状態に表示名を保存
+        gameState.setPlayerDisplayName(displayName);
+        
+        this.socketManager.matchByPassword(password, displayName);
         this.uiManager.showWaitingForPasswordMatch(password);
     }
 
@@ -186,6 +197,19 @@ class GameManager {
         // Password submission
         this.dom.getElement('submitPasswordBtn').addEventListener('click', () => {
             this.initiatePasswordMatch();
+        });
+        
+        // Enterキーでパスワード送信
+        this.dom.getElement('displayNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.initiatePasswordMatch();
+            }
+        });
+        
+        this.dom.getElement('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.initiatePasswordMatch();
+            }
         });
         
         // ゲーム選択 (after password match)

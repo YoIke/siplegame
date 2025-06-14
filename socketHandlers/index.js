@@ -58,9 +58,14 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
     // });
 
     socket.on('matchByPassword', (data) => {
-      const { password } = data;
+      const { password, displayName } = data;
       if (!password) {
         socket.emit('error', { message: 'Password is required.' });
+        return;
+      }
+      
+      if (!displayName) {
+        socket.emit('error', { message: 'Display name is required.' });
         return;
       }
 
@@ -71,9 +76,9 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
           sockets: [socket],
           roomId: roomId,
           gameType: null, // Game type not selected yet
-          playersInfo: [{ id: socket.id, name: 'Player ' + socket.id.substring(0, 4), ready: false }]
+          playersInfo: [{ id: socket.id, name: displayName, ready: false }]
         });
-        console.log(`[matchByPassword] New room created for password "${password}", room ID: ${roomId}, player: ${socket.id}`);
+        console.log(`[matchByPassword] New room created for password "${password}", room ID: ${roomId}, player: ${socket.id}, name: ${displayName}`);
         socket.emit('waitingForPasswordMatch', { password: password, roomId: roomId });
       } else {
         // Password entry exists
@@ -96,7 +101,7 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
                  });
             } else { // Other player disconnected, treat as new entry
                 passwordEntry.sockets = [socket];
-                passwordEntry.playersInfo = [{ id: socket.id, name: 'Player ' + socket.id.substring(0, 4), ready: false }];
+                passwordEntry.playersInfo = [{ id: socket.id, name: displayName, ready: false }];
                 passwordEntry.gameType = null; // Reset gameType if any
                 console.log(`[matchByPassword] Room for password "${password}" had only one disconnected player. Resetting for ${socket.id}.`);
                 socket.emit('waitingForPasswordMatch', { password: password, roomId: passwordEntry.roomId });
@@ -109,7 +114,7 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
         if (passwordEntry.sockets.length === 1) {
           // Second player joins
           passwordEntry.sockets.push(socket);
-          passwordEntry.playersInfo.push({ id: socket.id, name: 'Player ' + socket.id.substring(0, 4), ready: false });
+          passwordEntry.playersInfo.push({ id: socket.id, name: displayName, ready: false });
 
           console.log(`[matchByPassword] Player ${socket.id} joined room for password "${password}". Room ID: ${passwordEntry.roomId}. Notifying both players.`);
 
