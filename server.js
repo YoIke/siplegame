@@ -9,6 +9,7 @@ const io = socketIo(server);
 const BaseGameRoom = require('./gameLogic/baseGameRoom');
 const NumberGuessRoom = require('./gameLogic/numberGuessRoom');
 const HitAndBlowRoom = require('./gameLogic/hitAndBlowRoom');
+const CardGameRoom = require('./gameLogic/cardGameRoom');
 const initializeSocketHandlers = require('./socketHandlers'); // Import the handler initializer
 
 // 静的ファイルの配信
@@ -19,7 +20,7 @@ const gameRooms = new Map(); // Stores active game room instances
 const waitingPlayers = new Map(); // Stores players waiting by password: password -> { sockets: [], roomId: string, gameType: null | string, playersInfo: [] }
 
 // Initialize Socket.io handlers
-initializeSocketHandlers(io, gameRooms, waitingPlayers, NumberGuessRoom, HitAndBlowRoom);
+initializeSocketHandlers(io, gameRooms, waitingPlayers, NumberGuessRoom, HitAndBlowRoom, CardGameRoom);
 
 // サーバー起動
 const PORT = process.env.PORT || 3000;

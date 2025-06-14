@@ -1,10 +1,11 @@
 // ゲーム全体の管理クラス
 class GameManager {
-    constructor(domElements, uiManager, numberGuessGame, hitAndBlowGame, chatManager, socketManager) {
+    constructor(domElements, uiManager, numberGuessGame, hitAndBlowGame, cardGame, chatManager, socketManager) {
         this.dom = domElements;
         this.uiManager = uiManager;
         this.numberGuessGame = numberGuessGame;
         this.hitAndBlowGame = hitAndBlowGame;
+        this.cardGame = cardGame;
         this.chatManager = chatManager;
         this.socketManager = socketManager;
     }
@@ -77,10 +78,18 @@ class GameManager {
             this.numberGuessGame.initialize();
         } else if (data.gameType === 'hitandblow') {
             this.hitAndBlowGame.initialize();
+        } else if (data.gameType === 'cardgame') {
+            this.cardGame.startGame(data);
         }
     }
 
     handleMoveResult(data) {
+        if (gameState.currentGameType === 'cardgame') {
+            this.cardGame.handleMoveResult(data);
+            return;
+        }
+        
+        // 既存ゲームの処理
         // 試行履歴を更新
         this.uiManager.displayAttempt(data);
         
@@ -102,6 +111,8 @@ class GameManager {
             this.numberGuessGame.clearInput();
         } else if (gameState.currentGameType === 'hitandblow') {
             this.hitAndBlowGame.initialize();
+        } else if (gameState.currentGameType === 'cardgame') {
+            this.cardGame.clearSelections();
         }
     }
 

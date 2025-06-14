@@ -5,6 +5,7 @@ let gameRooms; // Map of active game rooms, will be initialized by server.js
 let waitingPlayers; // Map of players waiting for a match, will be initialized by server.js
 let NumberGuessRoom; // Class, will be initialized by server.js
 let HitAndBlowRoom; // Class, will be initialized by server.js
+let CardGameRoom; // Class, will be initialized by server.js
 
 // Helper function (needs access to gameRooms)
 function findRoomByPlayerId(playerId) {
@@ -17,11 +18,12 @@ function findRoomByPlayerId(playerId) {
   return null;
 }
 
-function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayers, numGuessClass, hnBClass) {
+function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayers, numGuessClass, hnBClass, cardGameClass) {
   gameRooms = localGameRooms;
   waitingPlayers = localWaitingPlayers;
   NumberGuessRoom = numGuessClass;
   HitAndBlowRoom = hnBClass;
+  CardGameRoom = cardGameClass;
   const io = ioInstance; // Use the passed io instance
 
   io.on('connection', (socket) => {
@@ -201,6 +203,8 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
         gameRoomInstance = new NumberGuessRoom(roomId);
       } else if (gameType === 'hitandblow') {
         gameRoomInstance = new HitAndBlowRoom(roomId);
+      } else if (gameType === 'cardgame') {
+        gameRoomInstance = new CardGameRoom(roomId);
       } else {
         console.error(`[selectGame] Unknown game type: ${gameType}`);
         playerSocket.emit('error', { message: `Unknown game type: ${gameType}`});
@@ -259,6 +263,19 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
             } else if (room.gameType === 'hitandblow') {
               gameStartData.colors = room.colors;
               gameStartData.codeLength = room.codeLength;
+            } else if (room.gameType === 'cardgame') {
+              // カードゲーム開始時は各プレイヤーに個別情報を送信
+              room.players.forEach(player => {
+                const playerSocket = io.sockets.sockets.get(player.id);
+                if (playerSocket) {
+                  const playerGameState = room.getPlayerGameState(player.id);
+                  playerSocket.emit('gameStart', {
+                    ...gameStartData,
+                    ...playerGameState
+                  });
+                }
+              });
+              return; // 個別送信したので共通送信はスキップ
             }
 
             io.to(room.roomId).emit('gameStart', gameStartData);
@@ -271,27 +288,57 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       }
     });
 
-    // ゲーム移動（数字予想 or 色選択）
+    // ゲーム移動（数字予想 or 色選択 or カード操作）
     socket.on('makeMove', (data) => {
       const room = findRoomByPlayerId(socket.id);
       if (room) {
         const result = room.makeMove(socket.id, data);
         if (result) {
-          io.to(room.roomId).emit('moveResult', {
-            ...result,
-            attempts: room.attempts,
-            nextPlayer: room.gameState === 'playing' ? room.players[room.currentPlayerIndex].name : null
-          });
-
-          if (room.gameState === 'finished') {
-            setTimeout(() => {
-              io.to(room.roomId).emit('gameEnd', {
-                winner: result.winner || null,
-                draw: result.draw || false,
-                targetNumber: result.targetNumber,
-                targetColors: result.targetColors
+          if (room.gameType === 'cardgame') {
+            // カードゲーム専用の処理
+            if (result.error) {
+              // エラーの場合は送信者のみに送る
+              socket.emit('moveError', result);
+            } else {
+              // 成功の場合は全員に結果を送信
+              io.to(room.roomId).emit('moveResult', result);
+              
+              // 各プレイヤーに個別の情報（手札等）を送信
+              room.players.forEach(player => {
+                const playerSocket = io.sockets.sockets.get(player.id);
+                if (playerSocket) {
+                  const playerGameState = room.getPlayerGameState(player.id);
+                  playerSocket.emit('gameStateUpdate', playerGameState);
+                }
               });
-            }, 2000);
+              
+              // ゲーム終了チェック
+              if (room.gameState === 'finished') {
+                setTimeout(() => {
+                  io.to(room.roomId).emit('gameEnd', {
+                    winner: result.winner || null
+                  });
+                }, 2000);
+              }
+            }
+          } else {
+            // 既存のゲーム（数字当て、ヒットアンドブロー）の処理
+            io.to(room.roomId).emit('moveResult', {
+              ...result,
+              attempts: room.attempts,
+              nextPlayer: room.gameState === 'playing' ? room.players[room.currentPlayerIndex].name : null
+            });
+
+            if (room.gameState === 'finished') {
+              setTimeout(() => {
+                io.to(room.roomId).emit('gameEnd', {
+                  winner: result.winner || null,
+                  draw: result.draw || false,
+                  targetNumber: result.targetNumber,
+                  targetColors: result.targetColors
+                });
+              }, 2000);
+            }
           }
         }
       }

@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!window.HitAndBlowGame) {
             throw new Error('window.HitAndBlowGame is not available. hitAndBlow.js may not be loaded.');
         }
+        if (!window.cardGame) {
+            throw new Error('window.cardGame is not available. cardGame.js may not be loaded.');
+        }
         if (!window.ChatManager) {
             throw new Error('window.ChatManager is not available. chat.js may not be loaded.');
         }
@@ -56,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             uiManager, 
             numberGuessGame, 
             hitAndBlowGame, 
+            window.cardGame,
             chatManager, 
             socketManager
         );
@@ -90,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             uiManager,
             numberGuessGame,
             hitAndBlowGame,
+            cardGame: window.cardGame,
             chatManager,
             gameManager
         };

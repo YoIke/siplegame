@@ -9,6 +9,11 @@ const GAME_INFO = {
         title: 'ヒットアンドブロー',
         icon: '🌈',
         description: '4つの色の組み合わせを当てよう！'
+    },
+    cardgame: {
+        title: 'クイックデュエル',
+        icon: '🃏',
+        description: '戦略カードゲーム！'
     }
 };
 

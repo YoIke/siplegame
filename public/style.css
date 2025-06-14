@@ -792,3 +792,326 @@ header p {
         gap: 8px;
     }
 }
+
+
+/* カードゲーム専用スタイル */
+.card-game-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 600px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 相手エリア */
+.opponent-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff7b7b, #ff9999);
+    border-radius: 10px;
+    color: white;
+}
+
+/* プレイヤーエリア */
+.player-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    border-radius: 10px;
+    color: white;
+}
+
+/* プレイヤー情報 */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: bold;
+}
+
+.health-bar, .mana-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.shield {
+    color: #ffd700;
+}
+
+.hand-count {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* ゲーム中央 */
+.game-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 10px;
+    color: white;
+}
+
+.turn-info {
+    text-align: center;
+}
+
+.current-turn {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.current-turn.my-turn {
+    background: rgba(76, 175, 80, 0.8);
+}
+
+.current-turn.opponent-turn {
+    background: rgba(244, 67, 54, 0.8);
+}
+
+.deck-info {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+/* 場 */
+.field {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    min-height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.opponent-field {
+    border: 2px solid rgba(255, 123, 123, 0.5);
+}
+
+.player-field {
+    border: 2px solid rgba(79, 172, 254, 0.5);
+}
+
+/* カード */
+.card {
+    min-width: 120px;
+    width: 120px;
+    height: 150px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    color: #333;
+    font-size: 0.85rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.card.selected {
+    border: 3px solid #4CAF50;
+    transform: translateY(-5px);
+}
+
+.card.unplayable {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.card.inactive {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.card.targetable {
+    border: 3px solid #ff9800;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* カードの内容 */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.card-cost {
+    background: #9c27b0;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+}
+
+.card-name {
+    font-size: 0.8rem;
+    text-align: center;
+    flex: 1;
+}
+
+.card-content {
+    flex: 1;
+    font-size: 0.7rem;
+    text-align: center;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.attack {
+    color: #d32f2f;
+}
+
+.health {
+    color: #4caf50;
+}
+
+/* 手札エリア */
+.hand-area {
+    margin-top: 10px;
+}
+
+.hand {
+    display: flex;
+    gap: 5px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow-x: auto;
+    min-height: 180px;
+}
+
+.hand .card {
+    min-width: 100px;
+    width: 100px;
+    height: 140px;
+    font-size: 0.75rem;
+}
+
+/* アクションボタン */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.action-buttons .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+
+/* ゲームメッセージ */
+.game-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 25px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    z-index: 1000;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+.game-message.error {
+    background: rgba(244, 67, 54, 0.9);
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .card-game-area {
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    .card {
+        min-width: 90px;
+        width: 90px;
+        height: 120px;
+        font-size: 0.7rem;
+    }
+    
+    .hand .card {
+        min-width: 80px;
+        width: 80px;
+        height: 110px;
+        font-size: 0.65rem;
+    }
+    
+    .player-info, .opponent-area .player-info {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .current-turn {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+}.health-bar.targetable {
+    border: 3px solid #ff9800;
+    border-radius: 10px;
+    padding: 5px;
+    animation: pulse 1s infinite;
+    background: rgba(255, 152, 0, 0.2);
+}
+
+.card.targetable {
+    border: 3px solid #ff9800;
+    animation: pulse 1s infinite;
+    transform: scale(1.05);
+}
+.game-message.victory {
+    background: rgba(76, 175, 80, 0.95);
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: 3px solid #4CAF50;
+}

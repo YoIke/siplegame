@@ -111,6 +111,25 @@ class SocketManager {
             }
         });
 
+        // カードゲーム専用イベント
+        this.socket.on('gameStateUpdate', (data) => {
+            console.log('ゲーム状態更新:', data);
+            if (this.gameState && this.gameState.currentGameType === 'cardgame') {
+                if (window.cardGame) {
+                    window.cardGame.updateGameState(data);
+                }
+            }
+        });
+
+        this.socket.on('moveError', (data) => {
+            console.log('移動エラー:', data);
+            if (this.gameState && this.gameState.currentGameType === 'cardgame') {
+                if (window.cardGame) {
+                    window.cardGame.handleMoveError(data);
+                }
+            }
+        });
+
         this.socket.on('gameEnd', (data) => {
             console.log('ゲーム終了:', data);
             if (this.gameManager) {
@@ -270,6 +289,11 @@ class SocketManager {
 
     makeMove(moveData) {
         this.socket.emit('makeMove', moveData);
+    }
+
+    sendMove(moveData) {
+        // カードゲーム用の統一された送信メソッド
+        this.makeMove(moveData);
     }
 
     sendChatMessage(message) {

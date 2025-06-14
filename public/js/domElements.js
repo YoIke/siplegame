@@ -38,6 +38,9 @@ class DOMElements {
             hitAndBlowGame: document.getElementById('hitAndBlowGame'),
             submitColorsBtn: document.getElementById('submitColorsBtn'),
             
+            // カードゲーム
+            cardGame: document.getElementById('cardGame'),
+            
             chatMessages: document.getElementById('chatMessages'),
             chatInput: document.getElementById('chatInput'),
             chatSendBtn: document.getElementById('chatSendBtn'),
@@ -104,6 +107,8 @@ class DOMElements {
             this.elements.numberGuessGame.classList.remove('hidden');
         } else if (gameType === 'hitandblow') {
             this.elements.hitAndBlowGame.classList.remove('hidden');
+        } else if (gameType === 'cardgame') {
+            this.elements.cardGame.classList.remove('hidden');
         }
     }
 }

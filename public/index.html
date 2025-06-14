@@ -51,6 +51,13 @@
                     <p>4つの色の組み合わせを当てよう！<br>Hit&Blowで推理</p>
                     <button class="btn primary">遊ぶ</button>
                 </div>
+                
+                <div class="game-card" data-game="cardgame">
+                    <div class="game-icon">🃏</div>
+                    <h3>クイックデュエル</h3>
+                    <p>戦略カードゲーム！<br>カードを駆使して相手を倒そう</p>
+                    <button class="btn primary">遊ぶ</button>
+                </div>
             </div>
         </div>
 
@@ -116,6 +123,65 @@
                         </div>
                     </div>
 
+                    <!-- カードゲーム用 -->
+                    <div id="cardGame" class="game-interface hidden">
+                        <div class="card-game-area">
+                            <!-- 相手の情報 -->
+                            <div class="opponent-area">
+                                <div class="player-info">
+                                    <span id="opponentName">相手</span>
+                                    <div class="health-bar">
+                                        <span>❤️ <span id="opponentHealth">15</span></span>
+                                        <span id="opponentShield" class="shield hidden">🛡️ <span></span></span>
+                                    </div>
+                                    <div class="hand-count">手札: <span id="opponentHandCount">0</span>枚</div>
+                                </div>
+                                <div id="opponentField" class="field opponent-field">
+                                    <!-- 相手の場のカード -->
+                                </div>
+                            </div>
+
+                            <!-- 場の中央 -->
+                            <div class="game-center">
+                                <div class="turn-info">
+                                    <div id="currentTurnPlayer" class="current-turn">あなたのターン</div>
+                                    <div class="deck-info">
+                                        <div class="deck">🂠 <span id="deckCount">30</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 自分の情報 -->
+                            <div class="player-area">
+                                <div id="playerField" class="field player-field">
+                                    <!-- 自分の場のカード -->
+                                </div>
+                                <div class="player-info">
+                                    <span id="playerName">あなた</span>
+                                    <div class="health-bar">
+                                        <span>❤️ <span id="playerHealth">15</span></span>
+                                        <span id="playerShield" class="shield hidden">🛡️ <span></span></span>
+                                    </div>
+                                    <div class="mana-bar">
+                                        <span>💎 <span id="playerMana">1</span></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- 手札 -->
+                                <div class="hand-area">
+                                    <div id="playerHand" class="hand">
+                                        <!-- 手札のカード -->
+                                    </div>
+                                </div>
+                                
+                                <!-- アクションボタン -->
+                                <div class="action-buttons">
+                                    <button id="endTurnBtn" class="btn primary">ターン終了</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="attempts" class="attempts-list">
                         <h4>試行履歴</h4>
                         <div id="attemptsList"></div>
@@ -171,6 +237,7 @@
     <!-- ゲーム固有処理 -->
     <script src="js/numberGuess.js"></script>
     <script src="js/hitAndBlow.js"></script>
+    <script src="js/cardGame.js"></script>
     <script src="js/chat.js"></script>
     
     <!-- 統括管理 -->
