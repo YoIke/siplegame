@@ -183,8 +183,15 @@ class UIManager {
     }
 
     resetInterface() {
-        this.dom.getElement('readyBtn').disabled = false;
-        this.dom.getElement('readyBtn').textContent = '準備完了';
+        console.log('UIManager.resetInterface called');
+        const readyBtn = this.dom.getElement('readyBtn');
+        if (readyBtn) {
+            readyBtn.disabled = false;
+            readyBtn.textContent = '準備完了';
+            console.log('Ready button reset to enabled state');
+        } else {
+            console.warn('Ready button element not found');
+        }
         this.dom.getElement('chatMessages').innerHTML = '';
     }
 

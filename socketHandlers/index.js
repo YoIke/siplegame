@@ -225,6 +225,7 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       // Notify both players that the game is selected and they should move to the gameWaiting screen
       // The 'matchFound' event is used by client to transition to 'gameWaiting' when gameType is present.
       passwordEntry.sockets.forEach(s => {
+        console.log(`[selectGame] Emitting matchFound to player ${s.id}`);
         s.emit('matchFound', {
           roomId: roomId,
           players: gameRoomInstance.players.map(p => ({ id: p.id, name: p.name, ready: p.ready })),
@@ -307,20 +308,25 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       const room = findRoomByPlayerId(socket.id);
       if (room && room.isPasswordRoom) { // Ensure it's a password room to allow "play again"
         console.log(`[newGame] Player ${socket.id} wants to play game ${room.gameType} again in room ${room.roomId}`);
+        
         // Reset game-specific state
         if (typeof room.resetGame === 'function') {
+            console.log(`[newGame] Calling resetGame for room ${room.roomId}`);
             room.resetGame(); // This method should be in BaseGameRoom and overridden if needed
         } else { // Fallback for older room structures
+            console.log(`[newGame] Using fallback reset for room ${room.roomId}`);
             room.gameState = 'waiting';
             room.attempts = [];
             room.currentPlayerIndex = 0;
             if (room.gameType === 'numberguess' && typeof room.initializeTarget === 'function') room.initializeTarget();
             if (room.gameType === 'hitandblow' && typeof room.initializeCode === 'function') room.initializeCode();
+            // Reset player ready states
+            room.players.forEach(p => p.ready = false);
         }
-        // Reset player ready states
-        room.players.forEach(p => p.ready = false);
 
-        console.log(`[newGame] Room ${room.roomId} reset for new game. Notifying players.`);
+        console.log(`[newGame] Room ${room.roomId} reset. Players ready state:`, room.players.map(p => ({id: p.id, ready: p.ready})));
+        console.log(`[newGame] Room state: ${room.gameState}`);
+        
         io.to(room.roomId).emit('newGameReady', { // Client uses this to go to gameWaiting screen
           roomId: room.roomId,
           gameType: room.gameType,
@@ -382,9 +388,22 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
               players: room.players.map(p => ({ id: p.id, name: p.name, ready: p.ready, wantsToReturnToSelection: p.wantsToReturnToSelection }))
             });
           }
+          
+          // 最初にボタンを押したプレイヤーにも状態を送信
+          socket.emit('waitingForOpponentToReturnToSelection', {
+            roomId: room.roomId,
+            players: room.players.map(p => ({ id: p.id, name: p.name, ready: p.ready, wantsToReturnToSelection: p.wantsToReturnToSelection }))
+          });
+        } else {
+          // 相手プレイヤーが見つからない場合（単独で戻る）
+          console.log(`[backToGameSelection] No other player found for ${socket.id} in room ${room.roomId}. Going to selection directly.`);
+          socket.emit('readyForNewGameSelection', {
+            roomId: room.roomId,
+            players: room.players.map(p => ({ id: p.id, name: p.name, ready: p.ready }))
+          });
+        }
            // The player who clicked might also get an update to show they are waiting for opponent.
            // For now, client handles this by disabling buttons.
-        }
       } else {
         // Original logic for non-password rooms or if room not found (e.g., cancelling initial password match)
         console.log(`[backToGameSelection] Player ${socket.id} not in a password room or room not found. Emitting backToGameSelection to self.`);

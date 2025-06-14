@@ -72,6 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 初期画面の表示
         domElements.showScreen('passwordEntryScreen');
         
+        // 初期状態でヘッダーを表示
+        domElements.showHeader();
+        
         // ヒットアンドブローの初期化
         hitAndBlowGame.initialize();
         

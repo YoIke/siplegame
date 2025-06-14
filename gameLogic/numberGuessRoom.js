@@ -13,6 +13,12 @@ class NumberGuessRoom extends BaseGameRoom {
     this.attempts = [];
   }
 
+  resetGameSpecific() {
+    // 数字当てゲーム固有のリセット
+    this.targetNumber = Math.floor(Math.random() * 100) + 1;
+    this.attempts = [];
+  }
+
   makeMove(playerId, moveData) {
     if (this.gameState !== 'playing') return null;
 

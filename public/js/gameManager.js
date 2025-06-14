@@ -11,15 +11,28 @@ class GameManager {
 
     // Renamed from startMatchmaking
     selectGameForMatch(gameType) {
+        console.log('selectGameForMatch called with:', gameType, 'currentRoomId:', gameState.currentRoomId);
+        console.log('Current players state:', gameState.players);
+        
         if (!gameState.currentRoomId) {
             console.warn('Room ID not set, cannot select game.');
             // Optionally, display an error to the user
-            this.uiManager.displayPasswordError('最初に有効なあいことばでマッチングしてください。');
-            this.dom.showScreen('passwordEntryScreen'); // Redirect to password screen
+            this.uiManager.displayPasswordError('まず、あいことばを入力してマッチングしてください。');
+            this.dom.showScreen('passwordEntryScreen');
             return;
         }
+        
+        console.log('Setting game type and sending to server:', gameType);
         gameState.setGameType(gameType); // Set game type locally first
+        
+        // プレイヤーの準備状態をリセット（ローカル）
+        if (gameState.players && Array.isArray(gameState.players)) {
+            gameState.players.forEach(p => p.ready = false);
+            console.log('Reset local player ready states');
+        }
+        
         this.socketManager.selectGame(gameType, gameState.currentRoomId);
+        
         // Server will eventually respond with 'gameStart' or similar
         // For now, we can show a generic waiting message or update UI
         this.uiManager.displayMessageAboveGameCards(""); // Clear any previous messages
@@ -97,6 +110,11 @@ class GameManager {
     }
 
     newGame() {
+        console.log('GameManager.newGame called');
+        // クライアント側でも状態をリセット
+        if (gameState.players && Array.isArray(gameState.players)) {
+            gameState.players.forEach(p => p.ready = false);
+        }
         this.socketManager.newGame();
     }
 
@@ -149,6 +167,7 @@ class GameManager {
                 this.numberGuessGame.clearInput();
             }
             this.dom.showScreen('passwordEntryScreen');
+            this.dom.showHeader(); // ヘッダーを表示
             this.uiManager.clearPasswordError();
             this.uiManager.displayMessageAboveGameCards(""); // Clear game selection message
         }
@@ -172,6 +191,7 @@ class GameManager {
         // ゲーム選択 (after password match)
         document.querySelectorAll('.game-card').forEach(card => {
             card.addEventListener('click', () => {
+                console.log('Game card clicked:', card.dataset.game, 'currentRoomId:', gameState.currentRoomId);
                 if (gameState.currentRoomId) {
                     const gameType = card.dataset.game;
                     this.selectGameForMatch(gameType);
@@ -194,6 +214,7 @@ class GameManager {
             }
             gameState.reset(); // Reset local state
             this.dom.showScreen('passwordEntryScreen');
+            this.dom.showHeader(); // ヘッダーを表示
             this.uiManager.clearPasswordError();
 
         });
@@ -210,12 +231,14 @@ class GameManager {
 
         this.dom.getElement('backToSelectionBtn').addEventListener('click', () => {
             // "Return to Game Selection" (for a different game)
+            console.log('backToSelectionBtn clicked');
             this.socketManager.backToGameSelection();
             // Client will wait, server will respond. UI might show a spinner or message.
             // For now, just stay on gameEnd screen until server event.
             // Optionally, disable buttons here to prevent multiple clicks.
             this.dom.getElement('newGameBtn').disabled = true;
             this.dom.getElement('backToSelectionBtn').disabled = true;
+            this.dom.getElement('backToSelectionBtn').textContent = '処理中...';
         });
 
         this.dom.getElement('backToSelectionFromDisconnect').addEventListener('click', () => {

@@ -15,6 +15,12 @@ class HitAndBlowRoom extends BaseGameRoom {
     this.attempts = [];
   }
 
+  resetGameSpecific() {
+    // ヒットアンドブロー固有のリセット
+    this.targetColors = this.generateTargetColors();
+    this.attempts = [];
+  }
+
   generateTargetColors() {
     const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'white'];
     const target = [];

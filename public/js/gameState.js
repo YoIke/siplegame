@@ -6,6 +6,7 @@ class GameState {
 
     reset() {
         this.currentRoom = null;
+        this.currentRoomId = null; // 追加: gameManager.jsで使用されているプロパティ
         this.playerId = null;
         this.isMyTurn = false;
         this.players = [];
@@ -21,6 +22,7 @@ class GameState {
 
     updateRoom(roomId) {
         this.currentRoom = roomId;
+        this.currentRoomId = roomId; // 追加: 両方のプロパティを同期
     }
 
     updatePlayers(players) {

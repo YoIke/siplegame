@@ -46,6 +46,16 @@ class SocketManager {
             }
         });
 
+        this.socket.on('waitingForPasswordMatch', (data) => {
+            console.log('パスワードマッチング待機中:', data);
+            if (this.gameState) {
+                this.gameState.updateRoom(data.roomId);
+            }
+            if (this.uiManager) {
+                this.uiManager.showWaitingForPasswordMatch(data.password);
+            }
+        });
+
         this.socket.on('matchFound', (data) => {
             console.log('マッチが見つかりました:', data);
             if (this.gameState) {
@@ -57,8 +67,13 @@ class SocketManager {
                     if (this.domElements) {
                         this.domElements.showScreen('gameWaiting');
                     }
+                    // ゲーム待機画面に遷移する際は準備完了ボタンをリセット
+                    if (this.uiManager) {
+                        this.uiManager.resetInterface();
+                    }
                 } else {
                     // Matched by password, waiting for game selection
+                    console.log('マッチング成功、ゲーム選択画面へ移動');
                     if (this.domElements) {
                         this.domElements.showScreen('gameSelection');
                     }
@@ -112,6 +127,7 @@ class SocketManager {
 
         // その他のゲームイベント
         this.socket.on('newGameReady', (data) => {
+            console.log('新しいゲーム準備:', data);
             if (this.gameState) {
                 this.gameState.updatePlayers(data.players);
             }
@@ -119,6 +135,7 @@ class SocketManager {
                 this.domElements.showScreen('gameWaiting');
             }
             if (this.uiManager) {
+                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo();
             }
         });
@@ -138,9 +155,22 @@ class SocketManager {
         this.socket.on('opponentReturnedToSelection', (data) => {
             console.log('Opponent wants to return to game selection:', data);
             if (this.domElements && this.uiManager && this.gameState) {
+                this.gameState.updatePlayers(data.players);
                 this.domElements.showScreen('gameSelection');
+                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo(data.players || this.gameState.players); // Update with fresh player data if sent
                 this.uiManager.displayMessageAboveGameCards("対戦相手が新しいゲームを選んでいます...");
+                
+                // ゲーム終了画面のボタンを再有効化
+                const newGameBtn = this.domElements.getElement('newGameBtn');
+                const backToSelectionBtn = this.domElements.getElement('backToSelectionBtn');
+                if (newGameBtn) {
+                    newGameBtn.disabled = false;
+                }
+                if (backToSelectionBtn) {
+                    backToSelectionBtn.disabled = false;
+                    backToSelectionBtn.textContent = 'ゲーム選択に戻る';
+                }
             }
         });
 
@@ -150,8 +180,42 @@ class SocketManager {
                 this.gameState.setGameType(null); // Clear old game type
                 this.gameState.updatePlayers(data.players); // Update with fresh player data
                 this.domElements.showScreen('gameSelection');
+                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo(); // Uses updated gameState
                 this.uiManager.displayMessageAboveGameCards("新しいゲームを選んでください");
+                
+                // ゲーム終了画面のボタンを再有効化
+                const newGameBtn = this.domElements.getElement('newGameBtn');
+                const backToSelectionBtn = this.domElements.getElement('backToSelectionBtn');
+                if (newGameBtn) {
+                    newGameBtn.disabled = false;
+                }
+                if (backToSelectionBtn) {
+                    backToSelectionBtn.disabled = false;
+                    backToSelectionBtn.textContent = 'ゲーム選択に戻る';
+                }
+            }
+        });
+
+        this.socket.on('waitingForOpponentToReturnToSelection', (data) => {
+            console.log('Waiting for opponent to return to selection:', data);
+            if (this.gameState && this.domElements && this.uiManager) {
+                this.gameState.updatePlayers(data.players);
+                this.domElements.showScreen('gameSelection');
+                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
+                this.uiManager.updatePlayersInfo();
+                this.uiManager.displayMessageAboveGameCards("相手がゲーム選択に戻るのを待っています...");
+                
+                // ゲーム終了画面のボタンを再有効化
+                const newGameBtn = this.domElements.getElement('newGameBtn');
+                const backToSelectionBtn = this.domElements.getElement('backToSelectionBtn');
+                if (newGameBtn) {
+                    newGameBtn.disabled = false;
+                }
+                if (backToSelectionBtn) {
+                    backToSelectionBtn.disabled = false;
+                    backToSelectionBtn.textContent = 'ゲーム選択に戻る';
+                }
             }
         });
 
@@ -174,6 +238,7 @@ class SocketManager {
             if (this.domElements && this.uiManager && this.gameState) {
                 this.gameState.reset(); // Full reset as the match is over
                 this.domElements.showScreen('passwordEntryScreen');
+                this.domElements.showHeader(); // ヘッダーを表示
                 this.uiManager.displayPasswordError('対戦相手の接続が切れました。あいことば入力に戻ります。');
                 // Consider also showing a modal like 'disconnectNotice' but more specific
             }
@@ -190,10 +255,13 @@ class SocketManager {
     }
 
     selectGame(gameType, roomId) {
+        console.log('SocketManager.selectGame called:', { gameType, roomId });
         if (this.gameState) {
             this.gameState.setAwaitingGameSelectionResponse(true);
+            console.log('Set awaiting game selection response to true');
         }
         this.socket.emit('selectGame', { gameType: gameType, roomId: roomId });
+        console.log('selectGame event emitted to server');
     }
 
     playerReady() {

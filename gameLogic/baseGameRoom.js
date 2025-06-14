@@ -8,12 +8,13 @@ class BaseGameRoom {
     this.chatMessages = [];
   }
 
-  addPlayer(socket) {
+  addPlayer(socket, customName = null) {
     if (this.players.length < 2) {
+      const playerName = customName || `プレイヤー${this.players.length + 1}`;
       this.players.push({
         socket: socket,
         id: socket.id,
-        name: `プレイヤー${this.players.length + 1}`,
+        name: playerName,
         ready: false
       });
       socket.join(this.roomId);
@@ -38,6 +39,27 @@ class BaseGameRoom {
       return true;
     }
     return false;
+  }
+
+  resetGame() {
+    // ゲーム状態をリセット
+    this.gameState = 'waiting';
+    this.currentPlayerIndex = 0;
+    this.chatMessages = [];
+    
+    // プレイヤーの準備状態をリセット
+    this.players.forEach(p => p.ready = false);
+    
+    // ゲーム固有の初期化
+    if (typeof this.initializeGame === 'function') {
+      // initializeGameを呼ばずに、ゲーム固有のリセット処理を行う
+      this.resetGameSpecific();
+    }
+  }
+
+  // 継承先でオーバーライドできるゲーム固有のリセット処理
+  resetGameSpecific() {
+    // 基底クラスでは何もしない
   }
 
   addChatMessage(playerId, message) {

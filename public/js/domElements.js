@@ -3,6 +3,8 @@ class DOMElements {
     constructor() {
         this.elements = {
             connectionStatus: document.getElementById('connectionStatus'),
+            header: document.querySelector('header'),
+            container: document.querySelector('.container'),
             passwordEntryScreen: document.getElementById('passwordEntryScreen'),
             passwordInput: document.getElementById('passwordInput'),
             submitPasswordBtn: document.getElementById('submitPasswordBtn'),
@@ -56,6 +58,39 @@ class DOMElements {
             screen.classList.add('hidden');
         });
         this.elements[screenName].classList.remove('hidden');
+        
+        // ヘッダーとステータスバーの表示/非表示制御
+        if (screenName === 'passwordEntryScreen') {
+            this.showHeader();
+        } else {
+            this.hideHeader();
+        }
+    }
+
+    // ヘッダーを表示
+    showHeader() {
+        if (this.elements.header) {
+            this.elements.header.classList.remove('hidden');
+        }
+        if (this.elements.connectionStatus) {
+            this.elements.connectionStatus.classList.remove('hidden');
+        }
+        if (this.elements.container) {
+            this.elements.container.classList.remove('compact');
+        }
+    }
+
+    // ヘッダーを非表示
+    hideHeader() {
+        if (this.elements.header) {
+            this.elements.header.classList.add('hidden');
+        }
+        if (this.elements.connectionStatus) {
+            this.elements.connectionStatus.classList.add('hidden');
+        }
+        if (this.elements.container) {
+            this.elements.container.classList.add('compact');
+        }
     }
 
     // ゲームインターフェース切り替え
