@@ -60,9 +60,6 @@ class GameManager {
         this.dom.showScreen('gameScreen');
         this.dom.showGameInterface(data.gameType);
         
-        // フローティングチャットアイコンを表示
-        this.uiManager.showFloatingChatIcon();
-        
         this.uiManager.updateGameStatus(data);
         this.uiManager.updateTurnDisplay(data.currentPlayer);
         
@@ -154,7 +151,7 @@ class GameManager {
                 gameState.players.forEach(p => p.ready = false);
             }
             this.uiManager.resetInterface(); // Resets ready buttons etc.
-            this.chatManager.clearMessages(); // Clear chat from previous game
+            // チャット履歴はマッチ中は維持する（ここではクリアしない）
 
             // Reset specific game UIs if necessary (e.g. HitAndBlow colors)
             if (this.hitAndBlowGame && typeof this.hitAndBlowGame.resetSelectedColors === 'function') {
@@ -181,7 +178,7 @@ class GameManager {
             if (lastPlayerId) gameState.setPlayerId(lastPlayerId); // Restore player ID
 
             this.uiManager.resetInterface();
-            this.chatManager.clearMessages();
+            this.chatManager.clearMessages(); // マッチ終了時のみチャットクリア
             if (this.hitAndBlowGame && typeof this.hitAndBlowGame.resetSelectedColors === 'function') {
                  this.hitAndBlowGame.resetSelectedColors();
             }

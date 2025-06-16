@@ -7,14 +7,40 @@ let NumberGuessRoom; // Class, will be initialized by server.js
 let HitAndBlowRoom; // Class, will be initialized by server.js
 let CardGameRoom; // Class, will be initialized by server.js
 
-// Helper function (needs access to gameRooms)
+// Helper function to find room by player ID (checks both gameRooms and waitingPlayers)
 function findRoomByPlayerId(playerId) {
   if (!gameRooms) return null; // Guard against gameRooms not being initialized
+  
+  // Check active game rooms first
   for (const room of gameRooms.values()) {
     if (room.players.some(p => p.id === playerId)) {
       return room;
     }
   }
+  
+  // Check waiting players (for password-matched players who haven't started a game yet)
+  for (const entry of waitingPlayers.values()) {
+    if (entry.sockets.some(s => s.id === playerId)) {
+      return {
+        roomId: entry.roomId,
+        players: entry.playersInfo,
+        isWaitingRoom: true, // フラグを追加して待機ルームであることを示す
+        addChatMessage: function(playerId, message) {
+          // 待機ルーム用のチャットメッセージ処理
+          const player = this.players.find(p => p.id === playerId);
+          if (player) {
+            return {
+              player: player.name,
+              message: message,
+              timestamp: new Date().toLocaleTimeString()
+            };
+          }
+          return null;
+        }
+      };
+    }
+  }
+  
   return null;
 }
 
@@ -74,6 +100,11 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       if (!waitingPlayers.has(password)) {
         // New password entry
         const roomId = `room_${password}_${Date.now()}`;
+        
+        // プレイヤーをSocket.IOルームに参加させる
+        socket.join(roomId);
+        console.log(`[matchByPassword] Player ${socket.id} joined Socket.IO room ${roomId}`);
+        
         waitingPlayers.set(password, {
           sockets: [socket],
           roomId: roomId,
@@ -88,6 +119,10 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
 
         if (passwordEntry.sockets.some(s => s.id === socket.id)) {
           console.warn(`[matchByPassword] Player ${socket.id} already in room for password "${password}".`);
+          // プレイヤーを再度ルームに参加させる（再接続の場合）
+          socket.join(passwordEntry.roomId);
+          console.log(`[matchByPassword] Player ${socket.id} rejoined Socket.IO room ${passwordEntry.roomId}`);
+          
           // Potentially re-emit success if they are already matched or waiting state
           if (passwordEntry.sockets.length === 1) {
             socket.emit('waitingForPasswordMatch', { password: password, roomId: passwordEntry.roomId });
@@ -117,6 +152,10 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
           // Second player joins
           passwordEntry.sockets.push(socket);
           passwordEntry.playersInfo.push({ id: socket.id, name: displayName, ready: false });
+
+          // 第2プレイヤーをSocket.IOルームに参加させる
+          socket.join(passwordEntry.roomId);
+          console.log(`[matchByPassword] Player ${socket.id} joined Socket.IO room ${passwordEntry.roomId}`);
 
           console.log(`[matchByPassword] Player ${socket.id} joined room for password "${password}". Room ID: ${passwordEntry.roomId}. Notifying both players.`);
 
@@ -424,12 +463,28 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
 
     // チャットメッセージ
     socket.on('chatMessage', (data) => {
+      console.log(`[chatMessage] Received from ${socket.id}:`, data);
+      
       const room = findRoomByPlayerId(socket.id);
+      console.log(`[chatMessage] Room found:`, room);
+      
       if (room) {
+        console.log(`[chatMessage] Room ID: ${room.roomId}, isWaitingRoom: ${room.isWaitingRoom}`);
+        
         const chatMessage = room.addChatMessage(socket.id, data.message);
+        console.log(`[chatMessage] Chat message created:`, chatMessage);
+        
         if (chatMessage) {
+          console.log(`[chatMessage] Emitting to room ${room.roomId}:`, chatMessage);
           io.to(room.roomId).emit('newChatMessage', chatMessage);
+          console.log(`[chatMessage] Message emitted successfully`);
+        } else {
+          console.error(`[chatMessage] Failed to create chat message for player ${socket.id}`);
         }
+      } else {
+        console.error(`[chatMessage] No room found for player ${socket.id}`);
+        console.log(`[chatMessage] Available gameRooms:`, Array.from(gameRooms.keys()));
+        console.log(`[chatMessage] Available waitingPlayers:`, Array.from(waitingPlayers.keys()));
       }
     });
 

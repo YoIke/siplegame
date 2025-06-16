@@ -58,6 +58,106 @@ window.testFloatingChat = () => {
     }
 };
 
+// マッチング後のチャット機能をテストする関数
+window.testPersistentChat = () => {
+    console.log('=== 継続チャット機能テスト ===');
+    
+    if (window.app && window.app.chatManager) {
+        const chatManager = window.app.chatManager;
+        
+        // フローティングアイコンを表示
+        chatManager.showFloatingIcon();
+        console.log('📱 フローティングアイコンを表示');
+        
+        // テストメッセージを追加
+        const testMessages = [
+            { player: 'テストユーザー1', message: 'マッチング成功！', timestamp: new Date().toLocaleTimeString() },
+            { player: 'テストユーザー2', message: 'よろしくお願いします', timestamp: new Date().toLocaleTimeString() },
+            { player: 'テストユーザー1', message: 'ゲーム選択画面でもチャットが使えます', timestamp: new Date().toLocaleTimeString() }
+        ];
+        
+        testMessages.forEach((msg, index) => {
+            setTimeout(() => {
+                chatManager.displayMessage(msg);
+                console.log(`💬 テストメッセージ ${index + 1} を追加`);
+            }, index * 1000);
+        });
+        
+        console.log('🔄 チャット履歴は画面遷移後も維持されます');
+        
+    } else {
+        console.log('❌ ChatManagerが見つかりません');
+    }
+};
+
+// チャット送信機能のデバッグ
+window.debugChatSending = () => {
+    console.log('=== チャット送信機能デバッグ ===');
+    
+    // アプリケーション状態確認
+    console.log('window.app:', window.app);
+    if (window.app) {
+        console.log('app.socketManager:', window.app.socketManager);
+        console.log('app.chatManager:', window.app.chatManager);
+        console.log('app.domElements:', window.app.domElements);
+    }
+    
+    // DOM要素確認
+    const modalChatInput = document.getElementById('modalChatInput');
+    const modalChatSendBtn = document.getElementById('modalChatSendBtn');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    
+    console.log('Modal Chat Input:', modalChatInput);
+    console.log('Modal Chat Send Button:', modalChatSendBtn);
+    console.log('Regular Chat Input:', chatInput);
+    console.log('Regular Chat Send Button:', chatSendBtn);
+    
+    // ソケット接続状態確認
+    if (window.app && window.app.socketManager && window.app.socketManager.socket) {
+        console.log('Socket connected:', window.app.socketManager.socket.connected);
+        console.log('Socket ID:', window.app.socketManager.socket.id);
+        console.log('Socket events:', window.app.socketManager.socket._callbacks);
+    } else {
+        console.log('❌ Socket not available');
+    }
+    
+    // 手動送信テスト（モーダル）
+    if (modalChatInput && window.app && window.app.chatManager) {
+        console.log('=== モーダルチャット手動テスト ===');
+        modalChatInput.value = 'デバッグテストメッセージ（モーダル）';
+        console.log('Test message entered in modal:', modalChatInput.value);
+        
+        try {
+            window.app.chatManager.sendModalMessage();
+            console.log('Modal sendMessage called successfully');
+        } catch (error) {
+            console.error('Modal sendMessage error:', error);
+        }
+    }
+    
+    // 手動送信テスト（通常）
+    if (chatInput && window.app && window.app.chatManager) {
+        console.log('=== 通常チャット手動テスト ===');
+        chatInput.value = 'デバッグテストメッセージ（通常）';
+        console.log('Test message entered in regular chat:', chatInput.value);
+        
+        try {
+            window.app.chatManager.sendMessage();
+            console.log('Regular sendMessage called successfully');
+        } catch (error) {
+            console.error('Regular sendMessage error:', error);
+        }
+    }
+    
+    // ゲーム状態確認
+    if (window.gameState) {
+        console.log('Game State Room ID:', window.gameState.currentRoomId);
+        console.log('Game State Players:', window.gameState.players);
+        console.log('Game State Player ID:', window.gameState.playerId);
+    }
+};
+
 // DOM読み込み完了時に確認
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkExports);

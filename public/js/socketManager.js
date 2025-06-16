@@ -80,8 +80,10 @@ class SocketManager {
                 }
             }
             
+            // マッチング成功時にフローティングチャットアイコンを表示
             if (this.uiManager) {
                 this.uiManager.updatePlayersInfo(); // Useful for showing matched players
+                this.uiManager.showFloatingChatIcon(); // チャット機能を有効化
             }
         });
 
@@ -154,8 +156,12 @@ class SocketManager {
 
         // チャットイベント
         this.socket.on('newChatMessage', (data) => {
+            console.log('newChatMessage received:', data);
             if (this.chatManager) {
                 this.chatManager.displayMessage(data);
+                console.log('Message passed to chatManager.displayMessage');
+            } else {
+                console.error('ChatManager not available for displaying message');
             }
         });
 
@@ -171,6 +177,8 @@ class SocketManager {
             if (this.uiManager) {
                 this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo();
+                // ゲーム待機画面でもフローティングアイコンを維持
+                this.uiManager.showFloatingChatIcon();
             }
         });
 
@@ -194,6 +202,8 @@ class SocketManager {
                 this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo(data.players || this.gameState.players); // Update with fresh player data if sent
                 this.uiManager.displayMessageAboveGameCards("対戦相手が新しいゲームを選んでいます...");
+                // ゲーム選択画面でもフローティングアイコンを維持
+                this.uiManager.showFloatingChatIcon();
                 
                 // ゲーム終了画面のボタンを再有効化
                 const newGameBtn = this.domElements.getElement('newGameBtn');
@@ -217,6 +227,8 @@ class SocketManager {
                 this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo(); // Uses updated gameState
                 this.uiManager.displayMessageAboveGameCards("新しいゲームを選んでください");
+                // ゲーム選択画面でもフローティングアイコンを維持
+                this.uiManager.showFloatingChatIcon();
                 
                 // ゲーム終了画面のボタンを再有効化
                 const newGameBtn = this.domElements.getElement('newGameBtn');
@@ -239,6 +251,8 @@ class SocketManager {
                 this.uiManager.resetInterface(); // 準備完了ボタンをリセット
                 this.uiManager.updatePlayersInfo();
                 this.uiManager.displayMessageAboveGameCards("相手がゲーム選択に戻るのを待っています...");
+                // ゲーム選択画面でもフローティングアイコンを維持
+                this.uiManager.showFloatingChatIcon();
                 
                 // ゲーム終了画面のボタンを再有効化
                 const newGameBtn = this.domElements.getElement('newGameBtn');
@@ -269,8 +283,10 @@ class SocketManager {
                 // this.gameState.setAwaitingGameSelectionResponse(false); // フラグをリセット
                 return;
             }
-            if (this.domElements && this.uiManager && this.gameState) {
+            if (this.domElements && this.uiManager && this.gameState && this.chatManager) {
                 this.gameState.reset(); // Full reset as the match is over
+                this.uiManager.hideFloatingChatIcon(); // フローティングアイコンを非表示
+                this.chatManager.clearMessages(); // チャット履歴をクリア
                 this.domElements.showScreen('passwordEntryScreen');
                 this.domElements.showHeader(); // ヘッダーを表示
                 this.uiManager.displayPasswordError('対戦相手の接続が切れました。あいことば入力に戻ります。');
@@ -312,7 +328,23 @@ class SocketManager {
     }
 
     sendChatMessage(message) {
+        console.log('SocketManager.sendChatMessage called with:', message);
+        console.log('Socket connected:', this.socket?.connected);
+        console.log('Socket ID:', this.socket?.id);
+        
+        if (!this.socket) {
+            console.error('Socket is not initialized');
+            return;
+        }
+        
+        if (!this.socket.connected) {
+            console.error('Socket is not connected');
+            return;
+        }
+        
+        console.log('Emitting chatMessage event...');
         this.socket.emit('chatMessage', { message: message });
+        console.log('chatMessage event emitted successfully');
     }
 
     newGame() {

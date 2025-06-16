@@ -60,23 +60,61 @@ class ChatManager {
 
     // モーダルからメッセージを送信
     sendModalMessage() {
-        const message = this.dom.getElement('modalChatInput').value.trim();
+        console.log('sendModalMessage called');
+        const messageInput = this.dom.getElement('modalChatInput');
+        if (!messageInput) {
+            console.error('Modal chat input element not found');
+            return;
+        }
+        
+        const message = messageInput.value.trim();
+        console.log('Message to send:', message);
+        
         if (message) {
             if (window.app && window.app.socketManager) {
+                console.log('Sending message via socketManager');
+                console.log('Socket connected:', window.app.socketManager.socket?.connected);
                 window.app.socketManager.sendChatMessage(message);
+                messageInput.value = '';
+                console.log('Message sent and input cleared');
+            } else {
+                console.error('SocketManager not available', { 
+                    windowApp: window.app,
+                    socketManager: window.app?.socketManager
+                });
             }
-            this.dom.getElement('modalChatInput').value = '';
+        } else {
+            console.log('Empty message, not sending');
         }
     }
 
     // 従来のメッセージ送信（旧チャットエリア用）
     sendMessage() {
-        const message = this.dom.getElement('chatInput').value.trim();
+        console.log('sendMessage called');
+        const messageInput = this.dom.getElement('chatInput');
+        if (!messageInput) {
+            console.error('Chat input element not found');
+            return;
+        }
+        
+        const message = messageInput.value.trim();
+        console.log('Message to send:', message);
+        
         if (message) {
             if (window.app && window.app.socketManager) {
+                console.log('Sending message via socketManager');
+                console.log('Socket connected:', window.app.socketManager.socket?.connected);
                 window.app.socketManager.sendChatMessage(message);
+                messageInput.value = '';
+                console.log('Message sent and input cleared');
+            } else {
+                console.error('SocketManager not available', {
+                    windowApp: window.app,
+                    socketManager: window.app?.socketManager
+                });
             }
-            this.dom.getElement('chatInput').value = '';
+        } else {
+            console.log('Empty message, not sending');
         }
     }
 
@@ -132,46 +170,99 @@ class ChatManager {
 
     // イベントリスナーをセットアップ
     setupEventListeners() {
+        console.log('ChatManager.setupEventListeners called');
+        
         // 旧チャット送信ボタン
-        this.dom.getElement('chatSendBtn').addEventListener('click', () => {
-            this.sendMessage();
-        });
+        const chatSendBtn = this.dom.getElement('chatSendBtn');
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', () => {
+                console.log('Old chat send button clicked');
+                this.sendMessage();
+            });
+            console.log('Old chat send button listener added');
+        } else {
+            console.warn('Old chat send button not found');
+        }
 
         // 旧チャット入力フィールド
-        this.dom.getElement('chatInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendMessage();
-            }
-        });
+        const chatInput = this.dom.getElement('chatInput');
+        if (chatInput) {
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('Old chat input Enter pressed');
+                    this.sendMessage();
+                }
+            });
+            console.log('Old chat input listener added');
+        } else {
+            console.warn('Old chat input not found');
+        }
 
         // フローティングアイコンクリック
-        this.dom.getElement('floatingChatIcon').addEventListener('click', () => {
-            this.openChatModal();
-        });
+        const floatingChatIcon = this.dom.getElement('floatingChatIcon');
+        if (floatingChatIcon) {
+            floatingChatIcon.addEventListener('click', () => {
+                console.log('Floating chat icon clicked');
+                this.openChatModal();
+            });
+            console.log('Floating chat icon listener added');
+        } else {
+            console.warn('Floating chat icon not found');
+        }
 
         // モーダル閉じるボタン
-        this.dom.getElement('closeChatModal').addEventListener('click', () => {
-            this.closeChatModal();
-        });
+        const closeChatModal = this.dom.getElement('closeChatModal');
+        if (closeChatModal) {
+            closeChatModal.addEventListener('click', () => {
+                console.log('Close chat modal button clicked');
+                this.closeChatModal();
+            });
+            console.log('Close chat modal button listener added');
+        } else {
+            console.warn('Close chat modal button not found');
+        }
 
         // モーダル送信ボタン
-        this.dom.getElement('modalChatSendBtn').addEventListener('click', () => {
-            this.sendModalMessage();
-        });
+        const modalChatSendBtn = this.dom.getElement('modalChatSendBtn');
+        if (modalChatSendBtn) {
+            modalChatSendBtn.addEventListener('click', () => {
+                console.log('Modal chat send button clicked');
+                this.sendModalMessage();
+            });
+            console.log('Modal chat send button listener added');
+        } else {
+            console.warn('Modal chat send button not found');
+        }
 
         // モーダル入力フィールド
-        this.dom.getElement('modalChatInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendModalMessage();
-            }
-        });
+        const modalChatInput = this.dom.getElement('modalChatInput');
+        if (modalChatInput) {
+            modalChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('Modal chat input Enter pressed');
+                    this.sendModalMessage();
+                }
+            });
+            console.log('Modal chat input listener added');
+        } else {
+            console.warn('Modal chat input not found');
+        }
 
         // モーダル背景クリックで閉じる
-        this.dom.getElement('chatModal').addEventListener('click', (e) => {
-            if (e.target === this.dom.getElement('chatModal')) {
-                this.closeChatModal();
-            }
-        });
+        const chatModal = this.dom.getElement('chatModal');
+        if (chatModal) {
+            chatModal.addEventListener('click', (e) => {
+                if (e.target === chatModal) {
+                    console.log('Chat modal background clicked');
+                    this.closeChatModal();
+                }
+            });
+            console.log('Chat modal background listener added');
+        } else {
+            console.warn('Chat modal not found');
+        }
+
+        console.log('ChatManager.setupEventListeners completed');
     }
 }
 
