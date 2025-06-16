@@ -23,24 +23,14 @@ class GameManager {
             return;
         }
         
-        console.log('Setting game type and sending to server:', gameType);
-        gameState.setGameType(gameType); // Set game type locally first
+        console.log('Requesting game selection confirmation from opponent:', gameType);
         
-        // プレイヤーの準備状態をリセット（ローカル）
-        if (gameState.players && Array.isArray(gameState.players)) {
-            gameState.players.forEach(p => p.ready = false);
-            console.log('Reset local player ready states');
-        }
-        
+        // 選択したゲームの確認をサーバーに送信（相手に確認を要求）
         this.socketManager.selectGame(gameType, gameState.currentRoomId);
         
-        // Server will eventually respond with 'gameStart' or similar
-        // For now, we can show a generic waiting message or update UI
-        this.uiManager.displayMessageAboveGameCards(""); // Clear any previous messages
-        this.uiManager.updateMatchmakingDisplay({ gameType }); // Show selected game
-        this.dom.showScreen('matchmaking'); // Show matchmaking/waiting screen
-        this.dom.getElement('matchmakingTitle').textContent = `${GAME_INFO[gameType].title} - 相手の準備を待っています`;
-        this.dom.getElement('waitingMessage').textContent = '相手がゲームを開始するのを待っています...';
+        // ユーザーに選択したことを表示
+        const gameInfo = GAME_INFO[gameType];
+        this.uiManager.displayMessageAboveGameCards(`「${gameInfo.title}」を選択しました。相手の確認を待っています...`);
     }
 
     initiatePasswordMatch() {
@@ -279,6 +269,50 @@ class GameManager {
         this.dom.getElement('backToSelectionFromDisconnect').addEventListener('click', () => {
             this.handleDisconnect();
         });
+
+        // ゲーム選択確認モーダルのイベント
+        this.dom.getElement('acceptGameBtn').addEventListener('click', () => {
+            this.handleGameSelectionResponse(true);
+        });
+
+        this.dom.getElement('rejectGameBtn').addEventListener('click', () => {
+            this.handleGameSelectionResponse(false);
+        });
+    }
+
+    // ゲーム選択確認の応答処理
+    handleGameSelectionResponse(accepted) {
+        const roomId = gameState.currentRoomId;
+        // 確認モーダルから gameType を取得する必要があります
+        // gameTypeをモーダル表示時に保存するか、DOMから取得します
+        const gameTypeFromModal = this.getGameTypeFromConfirmModal();
+        
+        this.socketManager.respondToGameSelection(roomId, gameTypeFromModal, accepted);
+        this.uiManager.hideGameSelectionConfirm();
+        
+        if (accepted) {
+            this.uiManager.displayMessageAboveGameCards('ゲームを開始します...');
+        } else {
+            this.uiManager.displayMessageAboveGameCards('別のゲームを選択してください');
+        }
+    }
+
+    // 確認モーダルからゲームタイプを取得
+    getGameTypeFromConfirmModal() {
+        // データ属性から直接取得
+        const gameType = this.dom.getElement('gameSelectionConfirm').dataset.gameType;
+        if (gameType) {
+            return gameType;
+        }
+        
+        // フォールバック: タイトルから逆引き
+        const selectedGameName = this.dom.getElement('selectedGameName').textContent;
+        for (const [gameType, info] of Object.entries(GAME_INFO)) {
+            if (info.title === selectedGameName) {
+                return gameType;
+            }
+        }
+        return null;
     }
 }
 

@@ -1280,6 +1280,65 @@ header p {
 }
 
 
+/* モーダル（切断通知、ゲーム確認）のスタイル */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 500px;
+    margin: 20px;
+    color: white;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+.modal-content p {
+    margin: 0 0 30px 0;
+    line-height: 1.6;
+    color: #f0f0f0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-buttons .btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+#selectedGameName {
+    font-weight: bold;
+    color: #ffeb3b;
+}
+
+
 /* ゲームコンテンツのスマホ対応 */
 @media (max-width: 768px) {
     .game-content {

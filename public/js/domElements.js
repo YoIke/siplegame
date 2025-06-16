@@ -17,6 +17,11 @@ class DOMElements {
             gameScreen: document.getElementById('gameScreen'),
             gameEnd: document.getElementById('gameEnd'),
             disconnectNotice: document.getElementById('disconnectNotice'),
+            gameSelectionConfirm: document.getElementById('gameSelectionConfirm'),
+            selectedGameName: document.getElementById('selectedGameName'),
+            gameConfirmMessage: document.getElementById('gameConfirmMessage'),
+            acceptGameBtn: document.getElementById('acceptGameBtn'),
+            rejectGameBtn: document.getElementById('rejectGameBtn'),
             
             matchmakingTitle: document.getElementById('matchmakingTitle'),
             selectedGameInfo: document.getElementById('selectedGameInfo'),

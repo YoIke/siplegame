@@ -93,6 +93,21 @@ class SocketManager {
                 this.uiManager.updatePlayersInfo();
             }
         });
+        // ゲーム選択確認関連のイベント
+        this.socket.on('gameSelectionRequest', (data) => {
+            console.log('相手からゲーム選択のリクエスト:', data);
+            if (this.uiManager && this.domElements) {
+                this.uiManager.showGameSelectionConfirm(data);
+            }
+        });
+
+        this.socket.on('gameSelectionRejected', (data) => {
+            console.log('相手がゲーム選択を拒否:', data);
+            if (this.uiManager && this.domElements) {
+                this.uiManager.showGameSelectionRejected(data);
+            }
+        });
+
         // ゲームイベント
         this.socket.on('gameStart', (data) => {
             console.log('ゲーム開始:', data);
@@ -306,6 +321,15 @@ class SocketManager {
 
     backToGameSelection() {
         this.socket.emit('backToGameSelection');
+    }
+
+    // ゲーム選択確認の応答
+    respondToGameSelection(roomId, gameType, accepted) {
+        this.socket.emit('gameSelectionResponse', { 
+            roomId: roomId, 
+            gameType: gameType, 
+            accepted: accepted 
+        });
     }
 }
 

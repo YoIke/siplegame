@@ -196,6 +196,81 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
           // If game is finished, it's okay to select a new one, existing room will be replaced.
       }
 
+      // 相手プレイヤーに確認を要求
+      const otherPlayerSocket = passwordEntry.sockets.find(s => s.id !== playerSocket.id);
+      if (otherPlayerSocket) {
+        console.log(`[selectGame] Sending game selection request to opponent ${otherPlayerSocket.id}`);
+        otherPlayerSocket.emit('gameSelectionRequest', {
+          gameType: gameType,
+          roomId: roomId,
+          requesterName: passwordEntry.playersInfo.find(p => p.id === playerSocket.id)?.name || 'Unknown'
+        });
+      } else {
+        console.error(`[selectGame] Could not find opponent socket for room ${roomId}`);
+        playerSocket.emit('error', { message: 'Opponent not found.' });
+      }
+    });
+
+    // ゲーム選択確認の応答
+    socket.on('gameSelectionResponse', (data) => {
+      const { gameType, roomId, accepted } = data;
+      const responderSocket = socket;
+
+      console.log(`[gameSelectionResponse] Player ${responderSocket.id} ${accepted ? 'accepted' : 'rejected'} game ${gameType} for room ${roomId}`);
+
+      let passwordEntry = null;
+      for (const entry of waitingPlayers.values()) {
+        if (entry.roomId === roomId) {
+          passwordEntry = entry;
+          break;
+        }
+      }
+
+      if (!passwordEntry) {
+        console.error(`[gameSelectionResponse] No password entry found for room ID ${roomId}`);
+        return;
+      }
+
+      const requesterSocket = passwordEntry.sockets.find(s => s.id !== responderSocket.id);
+      if (!requesterSocket) {
+        console.error(`[gameSelectionResponse] Could not find requester socket for room ${roomId}`);
+        return;
+      }
+
+      if (!accepted) {
+        // ゲーム選択が拒否された場合
+        console.log(`[gameSelectionResponse] Game ${gameType} rejected in room ${roomId}`);
+        requesterSocket.emit('gameSelectionRejected', {
+          gameType: gameType,
+          roomId: roomId,
+          rejectorName: passwordEntry.playersInfo.find(p => p.id === responderSocket.id)?.name || 'Unknown'
+        });
+        return;
+      }
+
+      // ゲーム選択が承認された場合、ゲームルームを作成
+      console.log(`[gameSelectionResponse] Game ${gameType} accepted in room ${roomId}. Creating game room.`);
+
+      // Check if a game is already selected or running for this room ID in gameRooms
+      if (gameRooms.has(roomId)) {
+          const existingRoom = gameRooms.get(roomId);
+          console.warn(`[gameSelectionResponse] Game room ${roomId} already exists with game type ${existingRoom.gameType}. Current selection: ${gameType}.`);
+          if (existingRoom.gameType === gameType && existingRoom.gameState !== 'finished') {
+            console.log(`[gameSelectionResponse] Game ${gameType} already set up for room ${roomId}.`);
+            passwordEntry.sockets.forEach(s => {
+              s.emit('matchFound', {
+                roomId: passwordEntry.roomId,
+                players: passwordEntry.playersInfo,
+                gameType: gameType // Now include gameType
+              });
+            });
+            return;
+          } else if (existingRoom.gameType !== gameType && existingRoom.gameState !== 'finished') {
+            requesterSocket.emit('error', {message: `Another game (${existingRoom.gameType}) is already active in this room.`});
+            return;
+          }
+      }
+
       passwordEntry.gameType = gameType; // Set the game type in the password entry
 
       let gameRoomInstance;
@@ -206,21 +281,17 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       } else if (gameType === 'cardgame') {
         gameRoomInstance = new CardGameRoom(roomId);
       } else {
-        console.error(`[selectGame] Unknown game type: ${gameType}`);
-        playerSocket.emit('error', { message: `Unknown game type: ${gameType}`});
+        console.error(`[gameSelectionResponse] Unknown game type: ${gameType}`);
+        requesterSocket.emit('error', { message: `Unknown game type: ${gameType}`});
         return;
       }
 
       gameRoomInstance.isPasswordRoom = true; // Mark as a password-matched room
 
       // Add players from passwordEntry.playersInfo to the gameRoomInstance
-      // The BaseGameRoom's addPlayer method expects a socket, but here we have playerInfo.
-      // We need to map sockets from passwordEntry.sockets to their playerInfo.
       passwordEntry.playersInfo.forEach(pInfo => {
         const pSocket = passwordEntry.sockets.find(s => s.id === pInfo.id);
         if (pSocket) {
-          // The addPlayer method in BaseGameRoom creates a new player object.
-          // We need to ensure it uses the name from pInfo and sets ready to false initially for the new game.
           gameRoomInstance.addPlayer(pSocket, pInfo.name); // Pass name if BaseGameRoom supports it
         }
       });
@@ -229,12 +300,11 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
       gameRoomInstance.players.forEach(p => p.ready = false);
 
       gameRooms.set(roomId, gameRoomInstance);
-      console.log(`[selectGame] Game room ${roomId} created with game ${gameType}. Players:`, gameRoomInstance.players.map(p=>p.name));
+      console.log(`[gameSelectionResponse] Game room ${roomId} created with game ${gameType}. Players:`, gameRoomInstance.players.map(p=>p.name));
 
       // Notify both players that the game is selected and they should move to the gameWaiting screen
-      // The 'matchFound' event is used by client to transition to 'gameWaiting' when gameType is present.
       passwordEntry.sockets.forEach(s => {
-        console.log(`[selectGame] Emitting matchFound to player ${s.id}`);
+        console.log(`[gameSelectionResponse] Emitting matchFound to player ${s.id}`);
         s.emit('matchFound', {
           roomId: roomId,
           players: gameRoomInstance.players.map(p => ({ id: p.id, name: p.name, ready: p.ready })),

@@ -211,6 +211,18 @@
             </div>
         </div>
 
+        <!-- ゲーム選択確認モーダル -->
+        <div id="gameSelectionConfirm" class="modal hidden">
+            <div class="modal-content">
+                <h3>ゲーム確認</h3>
+                <p id="gameConfirmMessage">相手が<span id="selectedGameName"></span>を選択しました。このゲームを始めますか？</p>
+                <div class="modal-buttons">
+                    <button id="acceptGameBtn" class="btn primary">はい、始める</button>
+                    <button id="rejectGameBtn" class="btn secondary">いいえ、別のゲームにする</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 切断通知 -->
         <div id="disconnectNotice" class="modal hidden">
             <div class="modal-content">

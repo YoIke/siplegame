@@ -232,6 +232,32 @@ class UIManager {
             console.warn('gameSelectionMessage element not found in DOMElements');
         }
     }
+
+    // ゲーム選択確認モーダルを表示
+    showGameSelectionConfirm(data) {
+        const gameInfo = GAME_INFO[data.gameType];
+        this.dom.getElement('selectedGameName').textContent = gameInfo.title;
+        // ゲームタイプをモーダル要素にデータ属性として保存
+        this.dom.getElement('gameSelectionConfirm').dataset.gameType = data.gameType;
+        this.dom.getElement('gameSelectionConfirm').classList.remove('hidden');
+        
+        // ゲーム選択画面にメッセージを表示
+        this.displayMessageAboveGameCards(`相手が「${gameInfo.title}」を選択しています...`);
+    }
+
+    // ゲーム選択拒否時の処理
+    showGameSelectionRejected(data) {
+        const gameInfo = GAME_INFO[data.gameType];
+        this.displayMessageAboveGameCards(`「${gameInfo.title}」が拒否されました。別のゲームを選択してください。`);
+        
+        // 確認モーダルを隠す
+        this.dom.getElement('gameSelectionConfirm').classList.add('hidden');
+    }
+
+    // 確認モーダルを隠す
+    hideGameSelectionConfirm() {
+        this.dom.getElement('gameSelectionConfirm').classList.add('hidden');
+    }
 }
 
 // UIManagerクラスをエクスポート
