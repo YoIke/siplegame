@@ -50,6 +50,15 @@ class DOMElements {
             chatInput: document.getElementById('chatInput'),
             chatSendBtn: document.getElementById('chatSendBtn'),
             
+            // フローティングチャット関連
+            floatingChatIcon: document.getElementById('floatingChatIcon'),
+            chatNotification: document.getElementById('chatNotification'),
+            chatModal: document.getElementById('chatModal'),
+            modalChatMessages: document.getElementById('modalChatMessages'),
+            modalChatInput: document.getElementById('modalChatInput'),
+            modalChatSendBtn: document.getElementById('modalChatSendBtn'),
+            closeChatModal: document.getElementById('closeChatModal'),
+            
             gameResult: document.getElementById('gameResult'),
             newGameBtn: document.getElementById('newGameBtn'),
             backToSelectionBtn: document.getElementById('backToSelectionBtn'),

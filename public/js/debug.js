@@ -25,6 +25,39 @@ const checkExports = () => {
     console.log('=== 読み込み確認完了 ===');
 };
 
+// フローティングチャット機能のテスト関数
+window.testFloatingChat = () => {
+    console.log('=== フローティングチャット機能テスト ===');
+    
+    const floatingIcon = document.getElementById('floatingChatIcon');
+    const chatModal = document.getElementById('chatModal');
+    const notification = document.getElementById('chatNotification');
+    
+    if (floatingIcon && chatModal && notification) {
+        console.log('✅ フローティングチャット要素が見つかりました');
+        
+        // アイコンを表示
+        floatingIcon.classList.remove('hidden');
+        console.log('📱 フローティングアイコンを表示しました');
+        
+        // 通知バッジをテスト
+        notification.classList.remove('hidden');
+        console.log('🔔 通知バッジを表示しました');
+        
+        // 5秒後に通知バッジを非表示
+        setTimeout(() => {
+            notification.classList.add('hidden');
+            console.log('🔕 通知バッジを非表示にしました');
+        }, 5000);
+        
+    } else {
+        console.log('❌ フローティングチャット要素が見つかりません');
+        console.log('floatingIcon:', floatingIcon);
+        console.log('chatModal:', chatModal);
+        console.log('notification:', notification);
+    }
+};
+
 // DOM読み込み完了時に確認
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkExports);

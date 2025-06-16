@@ -258,6 +258,19 @@ class UIManager {
     hideGameSelectionConfirm() {
         this.dom.getElement('gameSelectionConfirm').classList.add('hidden');
     }
+
+    // フローティングチャットアイコンの表示制御
+    showFloatingChatIcon() {
+        if (window.app && window.app.chatManager) {
+            window.app.chatManager.showFloatingIcon();
+        }
+    }
+
+    hideFloatingChatIcon() {
+        if (window.app && window.app.chatManager) {
+            window.app.chatManager.hideFloatingIcon();
+        }
+    }
 }
 
 // UIManagerクラスをエクスポート

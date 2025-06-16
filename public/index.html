@@ -188,8 +188,8 @@
                     </div>
                 </div>
 
-                <!-- チャットエリア -->
-                <div class="chat-area">
+                <!-- チャットエリア（非表示にする） -->
+                <div class="chat-area hidden">
                     <div class="chat-header">
                         <h4>💬 チャット</h4>
                     </div>
@@ -229,6 +229,27 @@
                 <h3>相手が切断しました</h3>
                 <p>対戦相手が切断したため、ゲームを終了します。</p>
                 <button id="backToSelectionFromDisconnect" class="btn primary">ゲーム選択に戻る</button>
+            </div>
+        </div>
+
+        <!-- フローティングチャットアイコン -->
+        <div id="floatingChatIcon" class="floating-chat-icon hidden">
+            <div class="chat-icon">💬</div>
+            <div id="chatNotification" class="chat-notification hidden">!</div>
+        </div>
+
+        <!-- チャットモーダル -->
+        <div id="chatModal" class="chat-modal hidden">
+            <div class="chat-modal-content">
+                <div class="chat-modal-header">
+                    <h4>💬 チャット</h4>
+                    <button id="closeChatModal" class="close-chat-btn">×</button>
+                </div>
+                <div id="modalChatMessages" class="chat-modal-messages"></div>
+                <div class="chat-modal-input">
+                    <input type="text" id="modalChatInput" placeholder="メッセージを入力...">
+                    <button id="modalChatSendBtn" class="btn">送信</button>
+                </div>
             </div>
         </div>
     </div>

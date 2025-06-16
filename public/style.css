@@ -308,8 +308,12 @@ header p {
 
 .game-content {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
     gap: 30px;
+}
+
+.game-content.with-chat {
+    grid-template-columns: 2fr 1fr;
 }
 
 /* Game area */
@@ -567,6 +571,10 @@ header p {
         grid-template-columns: 1fr;
     }
 
+    .game-content.with-chat {
+        grid-template-columns: 1fr;
+    }
+
     .chat-area {
         height: 300px;
     }
@@ -790,6 +798,203 @@ header p {
     
     .selected-colors {
         gap: 8px;
+    }
+}
+
+/* フローティングチャットアイコン */
+.floating-chat-icon {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.floating-chat-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.chat-icon {
+    font-size: 24px;
+    color: white;
+}
+
+.chat-notification {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #ff4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* チャットモーダル */
+.chat-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+    padding: 20px;
+}
+
+.chat-modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 500px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.chat-modal-header {
+    background: #667eea;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.close-chat-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.close-chat-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-modal-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f9f9f9;
+}
+
+.chat-modal-input {
+    display: flex;
+    padding: 20px;
+    gap: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+#modalChatInput {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#modalChatInput:focus {
+    border-color: #667eea;
+}
+
+#modalChatSendBtn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 25px;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .floating-chat-icon {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .chat-icon {
+        font-size: 20px;
+    }
+    
+    .chat-notification {
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        top: -3px;
+        right: -3px;
+    }
+    
+    .chat-modal {
+        padding: 10px;
+    }
+    
+    .chat-modal-content {
+        height: 80vh;
+        max-height: 600px;
+    }
+    
+    .chat-modal-header {
+        padding: 15px 20px;
+        font-size: 1.1rem;
+    }
+    
+    .chat-modal-messages {
+        padding: 15px;
+    }
+    
+    .chat-modal-input {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #modalChatInput {
+        margin-bottom: 0;
+    }
+    
+    #modalChatSendBtn {
+        width: 100%;
     }
 }
 

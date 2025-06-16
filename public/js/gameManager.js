@@ -60,6 +60,9 @@ class GameManager {
         this.dom.showScreen('gameScreen');
         this.dom.showGameInterface(data.gameType);
         
+        // フローティングチャットアイコンを表示
+        this.uiManager.showFloatingChatIcon();
+        
         this.uiManager.updateGameStatus(data);
         this.uiManager.updateTurnDisplay(data.currentPlayer);
         
@@ -110,6 +113,9 @@ class GameManager {
         console.log('ゲーム終了:', data);
         this.uiManager.displayGameResult(data);
         
+        // フローティングチャットアイコンを非表示
+        this.uiManager.hideFloatingChatIcon();
+        
         setTimeout(() => {
             this.dom.showScreen('gameEnd');
         }, 3000);
@@ -137,6 +143,10 @@ class GameManager {
     resetToGameSelection() {
         // This method is triggered by 'backToGameSelection' from server
         // or when a disconnect forces a return to selection/password screen.
+        
+        // フローティングチャットアイコンを非表示
+        this.uiManager.hideFloatingChatIcon();
+        
         if (gameState.currentRoomId) { // Persistent match, returning to select a new game
             console.log('Resetting for new game selection in room:', gameState.currentRoomId);
             gameState.setGameType(null);
