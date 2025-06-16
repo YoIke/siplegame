@@ -69,7 +69,7 @@ class SocketManager {
                     }
                     // ゲーム待機画面に遷移する際は準備完了ボタンをリセット
                     if (this.uiManager) {
-                        this.uiManager.resetInterface();
+                        this.uiManager.resetInterface(true); // チャット履歴を保持
                     }
                 } else {
                     // Matched by password, waiting for game selection
@@ -165,6 +165,23 @@ class SocketManager {
             }
         });
 
+        // チャット履歴同期イベント
+        this.socket.on('chatHistorySync', (data) => {
+            console.log('chatHistorySync received:', data);
+            if (this.chatManager && data.messages) {
+                console.log(`Syncing ${data.messages.length} chat messages`);
+                // 既存のメッセージをクリアして、履歴を再構築
+                this.chatManager.clearMessages();
+                data.messages.forEach((message, index) => {
+                    console.log(`Restoring message ${index + 1}:`, message);
+                    this.chatManager.displayMessage(message);
+                });
+                console.log('Chat history synchronized');
+            } else {
+                console.warn('ChatManager not available or no messages in chatHistorySync');
+            }
+        });
+
         // その他のゲームイベント
         this.socket.on('newGameReady', (data) => {
             console.log('新しいゲーム準備:', data);
@@ -175,7 +192,7 @@ class SocketManager {
                 this.domElements.showScreen('gameWaiting');
             }
             if (this.uiManager) {
-                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
+                this.uiManager.resetInterface(true); // 準備完了ボタンをリセット、チャット履歴保持
                 this.uiManager.updatePlayersInfo();
                 // ゲーム待機画面でもフローティングアイコンを維持
                 this.uiManager.showFloatingChatIcon();
@@ -199,7 +216,7 @@ class SocketManager {
             if (this.domElements && this.uiManager && this.gameState) {
                 this.gameState.updatePlayers(data.players);
                 this.domElements.showScreen('gameSelection');
-                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
+                this.uiManager.resetInterface(true); // 準備完了ボタンをリセット、チャット履歴保持
                 this.uiManager.updatePlayersInfo(data.players || this.gameState.players); // Update with fresh player data if sent
                 this.uiManager.displayMessageAboveGameCards("対戦相手が新しいゲームを選んでいます...");
                 // ゲーム選択画面でもフローティングアイコンを維持
@@ -224,7 +241,7 @@ class SocketManager {
                 this.gameState.setGameType(null); // Clear old game type
                 this.gameState.updatePlayers(data.players); // Update with fresh player data
                 this.domElements.showScreen('gameSelection');
-                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
+                this.uiManager.resetInterface(true); // 準備完了ボタンをリセット、チャット履歴保持
                 this.uiManager.updatePlayersInfo(); // Uses updated gameState
                 this.uiManager.displayMessageAboveGameCards("新しいゲームを選んでください");
                 // ゲーム選択画面でもフローティングアイコンを維持
@@ -248,7 +265,7 @@ class SocketManager {
             if (this.gameState && this.domElements && this.uiManager) {
                 this.gameState.updatePlayers(data.players);
                 this.domElements.showScreen('gameSelection');
-                this.uiManager.resetInterface(); // 準備完了ボタンをリセット
+                this.uiManager.resetInterface(true); // 準備完了ボタンをリセット、チャット履歴保持
                 this.uiManager.updatePlayersInfo();
                 this.uiManager.displayMessageAboveGameCards("相手がゲーム選択に戻るのを待っています...");
                 // ゲーム選択画面でもフローティングアイコンを維持

@@ -21,19 +21,27 @@ function findRoomByPlayerId(playerId) {
   // Check waiting players (for password-matched players who haven't started a game yet)
   for (const entry of waitingPlayers.values()) {
     if (entry.sockets.some(s => s.id === playerId)) {
+      // チャット履歴を初期化（存在しない場合）
+      if (!entry.chatMessages) {
+        entry.chatMessages = [];
+      }
+      
       return {
         roomId: entry.roomId,
         players: entry.playersInfo,
+        chatMessages: entry.chatMessages,
         isWaitingRoom: true, // フラグを追加して待機ルームであることを示す
         addChatMessage: function(playerId, message) {
           // 待機ルーム用のチャットメッセージ処理
           const player = this.players.find(p => p.id === playerId);
           if (player) {
-            return {
+            const chatMessage = {
               player: player.name,
               message: message,
               timestamp: new Date().toLocaleTimeString()
             };
+            this.chatMessages.push(chatMessage);
+            return chatMessage;
           }
           return null;
         }
@@ -335,6 +343,12 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
         }
       });
 
+      // 待機ルームからゲームルームにチャット履歴を移行
+      if (passwordEntry.chatMessages && passwordEntry.chatMessages.length > 0) {
+        console.log(`[gameSelectionResponse] Transferring ${passwordEntry.chatMessages.length} chat messages to game room`);
+        gameRoomInstance.chatMessages = [...passwordEntry.chatMessages];
+      }
+
       // Ensure players in gameRoomInstance have ready state false
       gameRoomInstance.players.forEach(p => p.ready = false);
 
@@ -349,6 +363,15 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
           players: gameRoomInstance.players.map(p => ({ id: p.id, name: p.name, ready: p.ready })),
           gameType: gameType // Crucially, gameType is now included
         });
+        
+        // チャット履歴を同期
+        if (gameRoomInstance.chatMessages && gameRoomInstance.chatMessages.length > 0) {
+          console.log(`[gameSelectionResponse] Sending ${gameRoomInstance.chatMessages.length} chat messages to ${s.id}`);
+          s.emit('chatHistorySync', {
+            roomId: roomId,
+            messages: gameRoomInstance.chatMessages
+          });
+        }
       });
     });
 
@@ -542,6 +565,34 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
         if (otherPlayer && otherPlayer.wantsToReturnToSelection) {
           // Both players want to return to selection
           console.log(`[backToGameSelection] Both players in room ${room.roomId} want to return. Resetting room for new game selection.`);
+          
+          // ゲームルームのチャット履歴を待機ルームに戻す
+          let passwordEntry = null;
+          for (const entry of waitingPlayers.values()) {
+            if (entry.roomId === room.roomId) {
+              passwordEntry = entry;
+              break;
+            }
+          }
+          
+          if (passwordEntry) {
+            // チャット履歴を保持
+            if (room.chatMessages && room.chatMessages.length > 0) {
+              console.log(`[backToGameSelection] Preserving ${room.chatMessages.length} chat messages`);
+              passwordEntry.chatMessages = [...room.chatMessages];
+            }
+            
+            // プレイヤー情報を更新
+            passwordEntry.gameType = null;
+            passwordEntry.playersInfo.forEach(p => {
+              p.ready = false;
+              const player = room.players.find(rp => rp.id === p.id);
+              if (player) {
+                player.wantsToReturnToSelection = false;
+              }
+            });
+          }
+          
           room.gameType = null;
           room.attempts = [];
           room.gameState = 'waitingForGameSelection'; // New state
@@ -561,6 +612,15 @@ function initializeSocketHandlers(ioInstance, localGameRooms, localWaitingPlayer
                 roomId: room.roomId,
                 players: room.players.map(p => ({ id: p.id, name: p.name, ready: p.ready }))
               });
+              
+              // チャット履歴を再送信
+              if (passwordEntry && passwordEntry.chatMessages && passwordEntry.chatMessages.length > 0) {
+                console.log(`[backToGameSelection] Sending ${passwordEntry.chatMessages.length} chat messages to ${s.id}`);
+                s.emit('chatHistorySync', {
+                  roomId: room.roomId,
+                  messages: passwordEntry.chatMessages
+                });
+              }
             }
           });
         } else if (otherPlayer) {

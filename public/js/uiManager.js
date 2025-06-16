@@ -192,8 +192,8 @@ class UIManager {
         `;
     }
 
-    resetInterface() {
-        console.log('UIManager.resetInterface called');
+    resetInterface(preserveChat = false) {
+        console.log('UIManager.resetInterface called with preserveChat:', preserveChat);
         const readyBtn = this.dom.getElement('readyBtn');
         if (readyBtn) {
             readyBtn.disabled = false;
@@ -202,7 +202,14 @@ class UIManager {
         } else {
             console.warn('Ready button element not found');
         }
-        this.dom.getElement('chatMessages').innerHTML = '';
+        
+        // チャット履歴を保持するかどうかを制御
+        if (!preserveChat) {
+            console.log('Clearing chat messages as preserveChat=false');
+            this.dom.getElement('chatMessages').innerHTML = '';
+        } else {
+            console.log('Preserving chat messages as preserveChat=true');
+        }
     }
 
     // Password related methods

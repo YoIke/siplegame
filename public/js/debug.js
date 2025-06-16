@@ -158,6 +158,46 @@ window.debugChatSending = () => {
     }
 };
 
+// チャット履歴保持機能のテスト
+window.testChatPersistence = () => {
+    console.log('=== チャット履歴保持機能テスト ===');
+    
+    if (window.app && window.app.chatManager) {
+        const chatManager = window.app.chatManager;
+        const chatMessages = document.getElementById('chatMessages');
+        const modalChatMessages = document.getElementById('modalChatMessages');
+        
+        console.log('Current chat messages (regular):', chatMessages ? chatMessages.children.length : 0);
+        console.log('Current chat messages (modal):', modalChatMessages ? modalChatMessages.children.length : 0);
+        
+        if (chatMessages) {
+            console.log('Regular chat content:', chatMessages.innerHTML);
+        }
+        
+        if (modalChatMessages) {
+            console.log('Modal chat content:', modalChatMessages.innerHTML);
+        }
+        
+        // チャット履歴の手動復元テスト
+        const testMessages = [
+            { player: 'テストユーザー1', message: 'ゲーム選択画面のメッセージ', timestamp: '10:00:00' },
+            { player: 'テストユーザー2', message: 'ゲーム中のメッセージ', timestamp: '10:05:00' },
+            { player: 'テストユーザー1', message: 'ゲーム終了後のメッセージ', timestamp: '10:10:00' }
+        ];
+        
+        console.log('手動でテストメッセージを復元中...');
+        testMessages.forEach((message, index) => {
+            setTimeout(() => {
+                chatManager.displayMessage(message);
+                console.log(`テストメッセージ ${index + 1} を復元`);
+            }, (index + 1) * 500);
+        });
+        
+    } else {
+        console.log('❌ ChatManagerが見つかりません');
+    }
+};
+
 // DOM読み込み完了時に確認
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkExports);

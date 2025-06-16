@@ -120,6 +120,7 @@ class ChatManager {
 
     // メッセージを表示
     displayMessage(data) {
+        console.log('ChatManager.displayMessage called with:', data);
         this.lastMessageId++;
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message';
@@ -129,8 +130,14 @@ class ChatManager {
         `;
         
         // 旧チャットエリアに追加
-        this.dom.getElement('chatMessages').appendChild(messageDiv);
-        this.dom.getElement('chatMessages').scrollTop = this.dom.getElement('chatMessages').scrollHeight;
+        const chatMessages = this.dom.getElement('chatMessages');
+        if (chatMessages) {
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            console.log('Message added to regular chat area');
+        } else {
+            console.warn('Regular chat messages element not found');
+        }
         
         // モーダルが開いていない場合は未読カウントを増やす
         if (!this.isModalOpen) {
@@ -139,6 +146,8 @@ class ChatManager {
         
         // モーダルにもメッセージを追加
         this.addMessageToModal(data);
+        
+        console.log(`Total messages in regular chat: ${chatMessages ? chatMessages.children.length : 0}`);
     }
 
     // モーダルにメッセージを追加
@@ -163,9 +172,13 @@ class ChatManager {
 
     // メッセージをクリア
     clearMessages() {
+        console.log('ChatManager.clearMessages called');
+        console.trace('clearMessages call stack');
         this.dom.getElement('chatMessages').innerHTML = '';
         this.dom.getElement('modalChatMessages').innerHTML = '';
         this.clearUnreadCount();
+        this.lastMessageId = 0; // メッセージIDもリセット
+        console.log('All chat messages cleared');
     }
 
     // イベントリスナーをセットアップ

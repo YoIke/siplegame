@@ -150,7 +150,7 @@ class GameManager {
             if (gameState.players && Array.isArray(gameState.players)) {
                 gameState.players.forEach(p => p.ready = false);
             }
-            this.uiManager.resetInterface(); // Resets ready buttons etc.
+            this.uiManager.resetInterface(true); // チャット履歴を保持
             // チャット履歴はマッチ中は維持する（ここではクリアしない）
 
             // Reset specific game UIs if necessary (e.g. HitAndBlow colors)
