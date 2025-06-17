@@ -17,7 +17,7 @@ class CardGameRoom extends BaseGameRoom {
       { id: 4, name: 'ウィザード', attack: 4, health: 2, cost: 3, type: 'creature' },
       { id: 5, name: 'ドラゴン', attack: 5, health: 4, cost: 5, type: 'creature' },
       
-      // スペル
+      // スペルあ
       { id: 6, name: 'ファイアボール', damage: 3, cost: 2, type: 'spell' },
       { id: 7, name: 'ヒール', heal: 4, cost: 2, type: 'spell' },
       { id: 8, name: 'ライトニング', damage: 2, cost: 1, type: 'spell' },
